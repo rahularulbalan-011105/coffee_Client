@@ -41,8 +41,8 @@ interface Mood {
 }
 
 const MOODS: Mood[] = [
-  { at: 0, bg: '#2a3a2f', fog: '#9aa690', density: 0.0042, sky: 1, skyTop: '#3d5747', skyHorizon: '#c9cdb2', hemiSky: '#e4ecd6', hemiGround: '#27351f', hemi: 1.1, sun: 2.8, sunColor: '#ffe6bf', sunDir: [-0.5, 0.45, -1], key: 0, keyColor: '#ffe0b8', env: 0.35 },
-  { at: 1.5, bg: '#2a3a2f', fog: '#95a18a', density: 0.006, sky: 1, skyTop: '#3a5343', skyHorizon: '#c2c6aa', hemiSky: '#e4ecd6', hemiGround: '#27351f', hemi: 1.0, sun: 3.0, sunColor: '#ffe3b5', sunDir: [-0.5, 0.5, -1], key: 0, keyColor: '#ffe0b8', env: 0.4 },
+  { at: 0, bg: '#2b2a27', fog: '#6f6c66', density: 0.0034, sky: 1, skyTop: '#1f2327', skyHorizon: '#8c7d6c', hemiSky: '#8b95a0', hemiGround: '#1a2418', hemi: 0.8, sun: 3.6, sunColor: '#ffbe70', sunDir: [0.14, 0.075, -1], key: 0, keyColor: '#ffe0b8', env: 0.3 },
+  { at: 1.5, bg: '#2b2a27', fog: '#67655e', density: 0.006, sky: 1, skyTop: '#1f2327', skyHorizon: '#857868', hemiSky: '#9aa3a8', hemiGround: '#1c2819', hemi: 1.0, sun: 3.4, sunColor: '#ffb869', sunDir: [0.14, 0.12, -1], key: 0, keyColor: '#ffe0b8', env: 0.4 },
   { at: 2.1, bg: '#6f7563', fog: '#8f957f', density: 0.08, sky: 0.3, skyTop: '#55604f', skyHorizon: '#a9ad96', hemiSky: '#dfe0cb', hemiGround: '#2a2a1c', hemi: 0.8, sun: 2.2, sunColor: '#ffe3b5', sunDir: [-0.6, 0.8, -0.2], key: 10, keyColor: '#ffe0b8', env: 0.5 },
   { at: 2.55, bg: '#1d1a12', fog: '#221f16', density: 0.05, sky: 0, skyTop: '#1d1a12', skyHorizon: '#1d1a12', hemiSky: '#e0d7ba', hemiGround: '#1d170f', hemi: 0.55, sun: 1.8, sunColor: '#ffe7c4', sunDir: [-0.6, 1, 0.4], key: 34, keyColor: '#ffe0b8', env: 0.6 },
   { at: 3.5, bg: '#140e0a', fog: '#140e0a', density: 0.08, sky: 0, skyTop: '#140e0a', skyHorizon: '#140e0a', hemiSky: '#ffdcb5', hemiGround: '#140a05', hemi: 0.34, sun: 0.35, sunColor: '#ffd2a0', sunDir: [-0.6, 1, 0.4], key: 60, keyColor: '#ffc38a', env: 0.75 },
@@ -121,14 +121,39 @@ const skyVertex = /* glsl */ `
   }
 `
 const skyFragment = /* glsl */ `
-  uniform vec3 uTop; uniform vec3 uHorizon; uniform vec3 uSun; uniform vec3 uSunColor; uniform float uOpacity;
+  uniform vec3 uTop; uniform vec3 uHorizon; uniform vec3 uSun; uniform vec3 uSunColor; uniform float uOpacity; uniform float uTime;
   varying vec3 vDir;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+  }
+  float fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++) { v += a * noise(p); p = p * 2.03 + 11.7; a *= 0.5; } return v; }
   void main() {
     vec3 d = normalize(vDir);
-    float h = clamp(d.y * 2.2 + 0.08, 0.0, 1.0);
-    vec3 col = mix(uHorizon, uTop, pow(h, 0.7));
     float s = max(dot(d, uSun), 0.0);
-    col += uSunColor * (pow(s, 12.0) * 0.45 + pow(s, 400.0) * 1.8);
+    vec3 col = mix(uHorizon, uTop, pow(clamp(d.y * 2.2 + 0.04, 0.0, 1.0), 0.55));
+    // Warm glow low around the sun.
+    col += uSunColor * pow(s, 5.0) * 0.6 * (1.0 - clamp(d.y * 2.0, 0.0, 1.0));
+
+    // Storm clouds: a domain-warped layer projected onto a sky plane.
+    vec2 uv = d.xz / (max(d.y, 0.0) + 0.16) * 0.9;
+    uv.x += uTime * 0.006;
+    float warp = fbm(uv * 0.55 + 3.1);
+    float n = fbm(uv * 1.05 + warp * 1.1);
+    float cover = smoothstep(0.38, 0.72, n) * smoothstep(-0.03, 0.1, d.y);
+    float thick = smoothstep(0.5, 0.95, n);
+    vec3 cloudDark = vec3(0.09, 0.095, 0.11);
+    vec3 cloudLit = mix(vec3(0.33, 0.32, 0.33), uSunColor * 1.15, pow(s, 3.0));
+    vec3 cloud = mix(cloudLit, cloudDark, thick * (1.0 - pow(s, 6.0) * 0.75));
+    // Silver linings where thin cloud edges face the sun.
+    cloud += uSunColor * cover * (1.0 - thick) * pow(s, 3.5) * 1.4;
+    // The sun burns a hole through the cloud deck.
+    cover *= 1.0 - pow(s, 25.0) * 0.9;
+    col = mix(col, cloud, cover);
+
+    // Sun disk and bloom.
+    col += uSunColor * (pow(s, 1400.0) * 8.0 + pow(s, 90.0) * 1.3 + pow(s, 14.0) * 0.25);
     gl_FragColor = vec4(col, uOpacity);
     #include <colorspace_fragment>
   }
@@ -184,6 +209,7 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
           uSun: { value: new Vector3() },
           uSunColor: { value: new Color() },
           uOpacity: { value: 1 },
+          uTime: { value: 0 },
         },
       }),
     [],
@@ -249,6 +275,7 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
       u.uSun.value.copy(m.sunDir)
       u.uSunColor.value.copy(m.sunColor).multiplyScalar(m.sky)
       u.uOpacity.value = m.sky
+      u.uTime.value = clock.elapsedTime
     }
     if (veil.current) {
       const k = window01(pos, 1.78, 2.46, 0.26)

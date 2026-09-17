@@ -10,6 +10,7 @@ import {
   ShaderMaterial,
   Vector3,
   type Group,
+  type Mesh,
   type Points,
 } from 'three'
 import { rng } from './math'
@@ -441,4 +442,87 @@ export function Aroma({
   })
 
   return <points ref={ref} position={position} geometry={geometry} material={material} frustumCulled={false} renderOrder={6} />
+}
+
+/* -------------------------------------------------------------------- rain */
+
+const rainVertex = /* glsl */ `
+  uniform float uTime; uniform vec3 uCenter; uniform vec3 uBox; uniform float uLength; uniform float uSpeed;
+  attribute vec4 aSeed;
+  varying float vA; varying float vV;
+  void main() {
+    // Each drop is a vertical quad; position.x in [-0.5, 0.5] is its width, position.y in [0, 1] its length.
+    vec3 base = aSeed.xyz * uBox;
+    base.y -= uTime * uSpeed * (0.8 + aSeed.w * 0.4);
+    base = mod(base - uCenter + uBox * 0.5, uBox) - uBox * 0.5 + uCenter;
+    vec3 toCam = normalize(cameraPosition - base);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam));
+    // Streaks lean slightly with the wind.
+    vec3 axis = normalize(vec3(0.12, 1.0, 0.0));
+    vec3 p = base + right * position.x * 0.022 * (0.6 + aSeed.w) + axis * position.y * uLength * (0.6 + aSeed.w * 0.8);
+    gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+    vA = 0.35 + aSeed.w * 0.65;
+    vV = position.y;
+  }
+`
+
+const rainFragment = /* glsl */ `
+  uniform vec3 uColor; uniform float uOpacity;
+  varying float vA; varying float vV;
+  void main() {
+    float a = smoothstep(0.0, 0.35, vV) * smoothstep(1.0, 0.65, vV);
+    gl_FragColor = vec4(uColor, a * vA * uOpacity);
+  }
+`
+
+/** Soft monsoon rain around the camera. */
+export function Rain({ count, center, opacity }: { count: number; center: () => Vector3; opacity: () => number }) {
+  const ref = useRef<Mesh>(null)
+  const { geometry, material } = useMemo(() => {
+    const r = rng(404)
+    const quad = [-0.5, 0, 0.5, 0, 0.5, 1, -0.5, 1]
+    const pos = new Float32Array(count * 4 * 3)
+    const seeds = new Float32Array(count * 4 * 4)
+    const index: number[] = []
+    for (let i = 0; i < count; i++) {
+      const s = [r() - 0.5, r() - 0.5, r() - 0.5, r()]
+      for (let v = 0; v < 4; v++) {
+        pos.set([quad[v * 2], quad[v * 2 + 1], 0], (i * 4 + v) * 3)
+        seeds.set(s, (i * 4 + v) * 4)
+      }
+      const o = i * 4
+      index.push(o, o + 1, o + 2, o, o + 2, o + 3)
+    }
+    const g = new BufferGeometry()
+    g.setAttribute('position', new BufferAttribute(pos, 3))
+    g.setAttribute('aSeed', new BufferAttribute(seeds, 4))
+    g.setIndex(index)
+    const m = new ShaderMaterial({
+      vertexShader: rainVertex,
+      fragmentShader: rainFragment,
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uCenter: { value: new Vector3() },
+        uBox: { value: new Vector3(36, 30, 36) },
+        uLength: { value: 1.4 },
+        uSpeed: { value: 26 },
+        uColor: { value: new Color('#cfd3cf') },
+        uOpacity: { value: 0 },
+      },
+    })
+    return { geometry: g, material: m }
+  }, [count])
+
+  useFrame(({ clock }) => {
+    const k = opacity()
+    if (ref.current) ref.current.visible = k > 0.01
+    material.uniforms.uOpacity.value = k * 0.12
+    material.uniforms.uTime.value = clock.elapsedTime
+    material.uniforms.uCenter.value.copy(center())
+  })
+
+  return <mesh ref={ref} geometry={geometry} material={material} frustumCulled={false} renderOrder={30} />
 }

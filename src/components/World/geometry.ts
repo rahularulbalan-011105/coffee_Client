@@ -224,16 +224,18 @@ export function beanGeometry(detail: 'high' | 'low' = 'high') {
  */
 export function leafGeometry(detail: 'high' | 'low' = 'high') {
   return cached(`leaf-${detail}`, () => {
-    const g = detail === 'high' ? new PlaneGeometry(1, 1, 4, 10) : new PlaneGeometry(1, 1, 2, 6)
+    const g = detail === 'high' ? new PlaneGeometry(1, 1, 8, 16) : new PlaneGeometry(1, 1, 6, 12)
     g.translate(0, 0.5, 0)
     const pos = g.attributes.position
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
       const y = pos.getY(i)
-      const width = Math.pow(Math.sin(Math.PI * Math.min(1, y * 1.02)), 0.75) * (1 - 0.25 * y) * 0.42
+      // Broad elliptic blade with a drip tip.
+      const width = Math.pow(Math.sin(Math.PI * Math.min(1, y * 1.02)), 0.6) * (1 - 0.3 * y * y) * 0.4
       const nx = x * 2 * width
-      let z = -Math.abs(nx) * 0.45 + y * y * 0.28
-      z += Math.sin(y * 16) * 0.018 * Math.abs(nx) * 3
+      // Gentle V-fold along the midrib, smooth arch along the length, slight wavy margin.
+      let z = -Math.abs(nx) * 0.18 + y * y * 0.16
+      z += Math.sin(y * 18) * 0.012 * Math.abs(x) * 2
       pos.setXYZ(i, nx, y, z)
     }
     g.computeVertexNormals()

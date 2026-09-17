@@ -58,3 +58,6 @@ export const TUMBLER = { height: 0.46, radiusTop: 0.128, radiusBottom: 0.108 } a
 
 /** World position helper: station origin + local offset. */
 export const at = (station: Vector3, x: number, y: number, z: number) => new Vector3(station.x + x, station.y + y, station.z + z)
+
+/** Low evening sun behind the estate, just right of the valley (world direction). */
+export const ESTATE_SUN = new Vector3(0.14, 0.075, -1).normalize()

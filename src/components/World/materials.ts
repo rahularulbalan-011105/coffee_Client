@@ -1,5 +1,6 @@
-import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2 } from 'three'
-import { brushedRoughness, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
+import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material } from 'three'
+import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
+import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
 
 /**
  * Shared PBR materials. Created lazily (textures need `document`) and reused by
@@ -7,6 +8,75 @@ import { brushedRoughness, foamTexture, perforatedTexture, rippleNormal, tableTe
  */
 
 let cache: ReturnType<typeof build> | null = null
+
+/**
+ * Turns a smooth blob into a leafy canopy: world-space noise breaks up colour and normals,
+ * so a few hundred triangles read as thousands of leaves from a distance.
+ */
+export function applyFoliageNoise(material: Material, scale = 1) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uFolScale = { value: scale }
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vFolPos;')
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vec4 folP = vec4(transformed, 1.0);
+        #ifdef USE_INSTANCING
+          folP = instanceMatrix * folP;
+        #endif
+        vFolPos = (modelMatrix * folP).xyz;`,
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vFolPos;
+        uniform float uFolScale;
+        float folHash(vec3 p) { return fract(sin(dot(p, vec3(17.1, 113.5, 71.7))) * 43758.5453); }
+        float folNoise(vec3 p) {
+          vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(folHash(i), folHash(i + vec3(1,0,0)), f.x), mix(folHash(i + vec3(0,1,0)), folHash(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(folHash(i + vec3(0,0,1)), folHash(i + vec3(1,0,1)), f.x), mix(folHash(i + vec3(0,1,1)), folHash(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }`,
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        vec3 folW = vFolPos * uFolScale;
+        float folN = folNoise(folW * 1.7) * 0.6 + folNoise(folW * 5.1) * 0.4;
+        diffuseColor.rgb *= 0.5 + folN * 0.9;`,
+      )
+      .replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        vec3 folJ = vec3(folNoise(folW * 2.3), folNoise(folW * 2.3 + 17.0), folNoise(folW * 2.3 + 41.0)) - 0.5;
+        normal = normalize(normal + folJ * 1.4);`,
+      )
+  }
+  material.customProgramCacheKey = () => `foliage-${scale}`
+}
+
+/**
+ * Alpha-tested foliage cards look like slivers when seen edge-on. Scale their alpha by how
+ * squarely they face the camera, so grazing cards dissolve and the bush reads as leaves.
+ */
+function fadeGrazingCards(material: Material) {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vFacing;')
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vec3 cardN = normalize(normalMatrix * objectNormal);
+        vFacing = abs(dot(cardN, normalize(-mvPosition.xyz)));`,
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vFacing;')
+      .replace('#include <alphatest_fragment>', 'diffuseColor.a *= smoothstep(0.08, 0.4, vFacing);\n#include <alphatest_fragment>')
+  }
+  material.customProgramCacheKey = () => 'foliage-card'
+}
 
 function build() {
   const brushed = brushedRoughness()
@@ -100,56 +170,52 @@ function build() {
   })
 
   // Waxy, glossy coffee leaf — colour comes from per-instance tint.
+  const leafTex = singleLeafTextures()
   const leaf = new MeshPhysicalMaterial({
     color: new Color('#ffffff'),
-    roughness: 0.5,
+    map: leafTex.map,
+    normalMap: leafTex.normal,
+    normalScale: new Vector2(0.8, 0.8),
+    roughness: 0.45,
     metalness: 0,
-    clearcoat: 0.3,
-    clearcoatRoughness: 0.45,
-    sheen: 0.25,
+    // Rain-wet: a glossy coat broken up by droplets.
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.2,
+    clearcoatNormalMap: dropletNormal(),
+    clearcoatNormalScale: new Vector2(0.25, 0.25),
+    sheen: 0.3,
     sheenColor: new Color('#b9d18a'),
     side: DoubleSide,
-    envMapIntensity: 0.35,
+    envMapIntensity: 0.45,
   })
 
   const foliage = new MeshStandardMaterial({ color: new Color('#ffffff'), roughness: 0.8, metalness: 0 })
-  foliage.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vFolPos;')
-      .replace(
-        '#include <project_vertex>',
-        `#include <project_vertex>
-        vec4 folP = vec4(transformed, 1.0);
-        #ifdef USE_INSTANCING
-          folP = instanceMatrix * folP;
-        #endif
-        vFolPos = (modelMatrix * folP).xyz;`,
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        varying vec3 vFolPos;
-        float folHash(vec3 p) { return fract(sin(dot(p, vec3(17.1, 113.5, 71.7))) * 43758.5453); }
-        float folNoise(vec3 p) {
-          vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(mix(folHash(i), folHash(i + vec3(1,0,0)), f.x), mix(folHash(i + vec3(0,1,0)), folHash(i + vec3(1,1,0)), f.x), f.y),
-                     mix(mix(folHash(i + vec3(0,0,1)), folHash(i + vec3(1,0,1)), f.x), mix(folHash(i + vec3(0,1,1)), folHash(i + vec3(1,1,1)), f.x), f.y), f.z);
-        }`,
-      )
-      .replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-        float folN = folNoise(vFolPos * 1.7) * 0.6 + folNoise(vFolPos * 5.1) * 0.4;
-        diffuseColor.rgb *= 0.55 + folN * 0.8;`,
-      )
-      .replace(
-        '#include <normal_fragment_maps>',
-        `#include <normal_fragment_maps>
-        vec3 folJ = vec3(folNoise(vFolPos * 2.3), folNoise(vFolPos * 2.3 + 17.0), folNoise(vFolPos * 2.3 + 41.0)) - 0.5;
-        normal = normalize(normal + folJ * 1.3);`,
-      )
-  }
+  applyFoliageNoise(foliage)
+
+  // Foliage cards: each shows a sprig of individually painted leaves (alpha-cut).
+  const coffeeTex = coffeeClusterTextures()
+  const leafCard = new MeshStandardMaterial({
+    map: coffeeTex.map,
+    normalMap: coffeeTex.normal,
+    normalScale: new Vector2(1.2, 1.2),
+    alphaTest: 0.5,
+    side: DoubleSide,
+    roughness: 0.5,
+    metalness: 0,
+    envMapIntensity: 0.6,
+  })
+  fadeGrazingCards(leafCard)
+  const canopyTex = canopyClusterTextures()
+  const canopyCard = new MeshStandardMaterial({
+    map: canopyTex.map,
+    normalMap: canopyTex.normal,
+    alphaTest: 0.5,
+    side: DoubleSide,
+    roughness: 0.65,
+    metalness: 0,
+    envMapIntensity: 0.4,
+  })
+  fadeGrazingCards(canopyCard)
 
   const cherry = new MeshPhysicalMaterial({
     color: new Color('#ffffff'),
@@ -177,7 +243,7 @@ function build() {
     roughness: 0.2,
   })
 
-  return { brass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, cherry, bark, enamel, ember }
+  return { brass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, canopyCard, cherry, bark, enamel, ember }
 }
 
 export function getMaterials() {

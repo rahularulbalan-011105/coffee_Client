@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { CatmullRomCurve3, Color, Euler, InstancedMesh, Matrix4, Quaternion, TubeGeometry, Vector3, type Group, type PointLight } from 'three'
+import { CatmullRomCurve3, Color, InstancedMesh, Matrix4, Quaternion, TubeGeometry, Vector3, type Group, type PointLight } from 'three'
 import { sceneState } from '../../animation/journey'
 import BeanFlow, { type Waypoint } from './BeanFlow'
 import { useKit } from './models'
@@ -72,15 +72,20 @@ export default function Harvest({ detail }: { detail: 'high' | 'low' }) {
     if (!mesh) return
     const r = rng(15)
     const q = new Quaternion()
-    const e = new Euler()
+    const basis = new Matrix4()
     let i = 0
     const up = new Vector3(0, 1, 0)
     for (const node of nodes) {
       const side = new Vector3().crossVectors(node.t, up).normalize()
       for (const s of [-1, 1]) {
-        const yaw = Math.atan2(-side.x * s, -side.z * s)
-        e.set(-Math.PI / 2 - (0.15 + r() * 0.3), yaw + (r() - 0.5) * 0.4, (r() - 0.5) * 0.3, 'YXZ')
-        q.setFromEuler(e)
+        // Opposite leaves: tip out to the side and slightly forward, drooping a little;
+        // the blade faces the sky (and the camera looking down on it).
+        const tip = side.clone().multiplyScalar(s).addScaledVector(node.t, 0.45).add(new Vector3(0, -0.28 - r() * 0.2, 0)).normalize()
+        const face = up.clone().addScaledVector(tip, -up.dot(tip)).add(new Vector3(0, 0, 0.25)).normalize()
+        const across = new Vector3().crossVectors(tip, face).normalize()
+        face.crossVectors(across, tip).normalize()
+        basis.makeBasis(across, tip, face)
+        q.setFromRotationMatrix(basis)
         const size = 1.4 + node.u * 0.5 + r() * 0.3
         mesh.setMatrixAt(i, new Matrix4().compose(node.p.clone().addScaledVector(side, s * 0.04), q, new Vector3(size, size, size)))
         mesh.setColorAt(i, new Color(PLANT_COLORS.leaves[Math.floor(r() * 6)]).multiplyScalar(1.05 + r() * 0.3))

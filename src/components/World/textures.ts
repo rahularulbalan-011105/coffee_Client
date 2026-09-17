@@ -8,7 +8,7 @@ import { rng } from './math'
 
 const cache = new Map<string, Texture>()
 
-function make(key: string, size: number, draw: (ctx: CanvasRenderingContext2D, size: number) => void, srgb = false) {
+export function make(key: string, size: number, draw: (ctx: CanvasRenderingContext2D, size: number) => void, srgb = false) {
   const hit = cache.get(key)
   if (hit) return hit
   const canvas = document.createElement('canvas')
@@ -209,4 +209,33 @@ export function beanCarpetTexture() {
     },
     true,
   )
+}
+
+/** Scattered raindrops as a normal map (for a wet clearcoat on leaves). */
+export function dropletNormal() {
+  return make('droplets', 256, (ctx, s) => {
+    const r = rng(90)
+    ctx.fillStyle = 'rgb(128,128,255)'
+    ctx.fillRect(0, 0, s, s)
+    const img = ctx.getImageData(0, 0, s, s)
+    for (let k = 0; k < 90; k++) {
+      const cx = r() * s
+      const cy = r() * s
+      const rad = 2 + Math.pow(r(), 2) * 9
+      for (let y = Math.floor(cy - rad); y <= cy + rad; y++) {
+        for (let x = Math.floor(cx - rad); x <= cx + rad; x++) {
+          const dx = (x - cx) / rad
+          const dy = (y - cy) / rad
+          const d2 = dx * dx + dy * dy
+          if (d2 > 1) continue
+          const nz = Math.sqrt(1 - d2)
+          const i = ((((y % s) + s) % s) * s + (((x % s) + s) % s)) * 4
+          img.data[i] = (dx * 0.5 + 0.5) * 255
+          img.data[i + 1] = (-dy * 0.5 + 0.5) * 255
+          img.data[i + 2] = (nz * 0.5 + 0.5) * 255
+        }
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+  })
 }

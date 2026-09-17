@@ -67,8 +67,9 @@ export interface CameraKey {
 /** The descent. See World/layout.ts for station positions. */
 export const CAMERA_KEYS: CameraKey[] = [
   // Estate: wide over the terraces, drifting in and down between the rows.
-  { at: 0.0, pos: [-3, 27, 44], target: [4, 15, -12], fov: 38 },
-  { at: 0.55, pos: [-1, 21, 32], target: [3.5, 12.5, -4], fov: 36 },
+  // Estate: from the top of the terraces, out across the valley into the sunset.
+  { at: 0.0, pos: [-2, 31, 46], target: [8, 17, -80], fov: 40 },
+  { at: 0.55, pos: [-1, 25, 34], target: [5, 12, -30], fov: 38 },
   // Harvest: into the bush, face to face with the branch.
   { at: 1.05, pos: [1.2, 12.4, 18.5], target: [3.0, 9.6, 8.5], fov: 34 },
   { at: 1.5, pos: [1.0, 10.2, 13.8], target: [3.0, 9.0, 8.8], fov: 32 },
