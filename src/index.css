@@ -1,0 +1,202 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-espresso: #0b0705;
+  --color-roast: #140c08;
+  --color-bean: #22150e;
+  --color-mocha: #5a3a26;
+  --color-cream: #efe4d2;
+  --color-parchment: #f4ecdf;
+  --color-linen: #e8dcc8;
+  --color-ink: #1c120c;
+  --color-gold: #c9a35b;
+  --color-gold-soft: #e3c78e;
+  --color-bronze: #8e6630;
+
+  /* Plantation accents — the origin of the story, used sparingly. */
+  --color-forest: #16261c;
+  --color-plantation: #2f4a36;
+  --color-olive: #6f7a4d;
+  --color-sage: #a9b893;
+
+  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-espresso);
+    color: var(--color-cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-espresso);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-espresso);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-gold-soft);
+    outline-offset: 4px;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 0.92;
+    letter-spacing: -0.01em;
+  }
+
+  .hairline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-gold) 55%, transparent), transparent);
+  }
+
+  .btn-gold {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-espresso);
+    background: linear-gradient(135deg, #e8cc92 0%, #c9a35b 45%, #a47a38 100%);
+    border-radius: 999px;
+    transition:
+      transform 0.5s var(--ease-lux),
+      box-shadow 0.5s var(--ease-lux),
+      filter 0.5s var(--ease-lux);
+    box-shadow: 0 10px 30px -12px rgb(201 163 91 / 0.55);
+  }
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 16px 40px -14px rgb(201 163 91 / 0.75);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-cream);
+    border: 1px solid rgb(239 228 210 / 0.28);
+    border-radius: 999px;
+    transition:
+      border-color 0.5s var(--ease-lux),
+      background-color 0.5s var(--ease-lux),
+      color 0.5s var(--ease-lux);
+  }
+  .btn-ghost:hover {
+    border-color: var(--color-gold-soft);
+    background-color: rgb(201 163 91 / 0.08);
+    color: var(--color-gold-soft);
+  }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.6s var(--ease-lux);
+  }
+  .link-underline:hover {
+    background-size: 100% 1px;
+  }
+
+  /* Soft film grain — pure CSS, costs nothing on the GPU budget of the 3D scene. */
+  .grain::after {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    animation: grain 1.2s steps(6) infinite;
+  }
+
+  /* Readability layer over the 3D world; its colour follows the journey (--tint). */
+  .journey-vignette {
+    background:
+      radial-gradient(120% 95% at 62% 48%, transparent 42%, rgb(var(--tint) / 0.5) 76%, rgb(var(--tint) / 0.92) 100%),
+      linear-gradient(90deg, rgb(var(--tint) / 0.78) 0%, rgb(var(--tint) / 0.35) 32%, transparent 56%);
+  }
+  @media (max-width: 767px) {
+    .journey-vignette {
+      background:
+        radial-gradient(130% 80% at 50% 34%, transparent 40%, rgb(var(--tint) / 0.55) 80%, rgb(var(--tint) / 0.92) 100%),
+        linear-gradient(0deg, rgb(var(--tint) / 0.95) 0%, rgb(var(--tint) / 0.6) 32%, transparent 55%);
+    }
+  }
+
+  .text-glow {
+    text-shadow: 0 2px 30px rgb(11 7 5 / 0.7), 0 1px 3px rgb(11 7 5 / 0.35);
+  }
+}
+
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3%, 2%); }
+  40% { transform: translate(2%, -3%); }
+  60% { transform: translate(-2%, -1%); }
+  80% { transform: translate(3%, 3%); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes scroll-cue {
+  0% { transform: scaleY(0); transform-origin: top; }
+  45% { transform: scaleY(1); transform-origin: top; }
+  55% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+@keyframes steam-rise {
+  0% { transform: translateY(8px) scaleX(1); opacity: 0; }
+  30% { opacity: 0.7; }
+  100% { transform: translateY(-26px) scaleX(1.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grain::after { animation: none; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
