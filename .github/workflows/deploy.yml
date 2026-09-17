@@ -2,6 +2,7 @@ name: Deploy to GitHub Pages
 
 # Builds the site and publishes dist/ to the `gh-pages` branch.
 # Repository settings → Pages → "Deploy from a branch" → gh-pages / (root).
+# Served at https://manamcoffee.com (www redirects).
 
 on:
   push:
@@ -34,3 +35,5 @@ jobs:
           publish_branch: gh-pages
           force_orphan: true
           enable_jekyll: false
+          # Custom domain (DNS at Hostinger). Written as CNAME on every deploy.
+          cname: manamcoffee.com
