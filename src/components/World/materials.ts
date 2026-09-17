@@ -1,5 +1,6 @@
-import { Color, DoubleSide, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material } from 'three'
+import { Color, DoubleSide, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material, type Texture } from 'three'
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
+import { dabaraEngraving, tumblerEngraving } from './engraving'
 import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
 
 /**
@@ -91,6 +92,23 @@ function build() {
     envMapIntensity: 1.25,
     side: DoubleSide,
   })
+
+  // Serving set: soft satin gold with a hand-engraved band (as in traditional brassware).
+  const satinBrass = (tex: { map: Texture; bump: Texture }) =>
+    new MeshPhysicalMaterial({
+      color: new Color('#e2bd72'),
+      map: tex.map,
+      bumpMap: tex.bump,
+      bumpScale: 1.4,
+      metalness: 1,
+      roughness: 0.36,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.3,
+      envMapIntensity: 1.7,
+      side: DoubleSide,
+    })
+  const dabaraBrass = satinBrass(dabaraEngraving())
+  const tumblerBrass = satinBrass(tumblerEngraving())
 
   const brassDark = new MeshStandardMaterial({
     color: new Color('#8e6630'),
@@ -238,7 +256,7 @@ function build() {
     roughness: 0.2,
   })
 
-  return { brass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
+  return { brass, dabaraBrass, tumblerBrass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
 }
 
 export function getMaterials() {

@@ -53,8 +53,10 @@ export const FILTER = {
   moundBase: 0.53,
 } as const
 
-export const DABARA = { radius: 0.3, height: 0.17, rim: 0.335 } as const
-export const TUMBLER = { height: 0.46, radiusTop: 0.128, radiusBottom: 0.108 } as const
+/** Deep, straight-walled dabara with a flat flared rim; height is the rim top. */
+export const DABARA = { radius: 0.26, height: 0.25, rim: 0.345 } as const
+/** Tapered tumbler, wider at the mouth, with a flared lip. */
+export const TUMBLER = { height: 0.4, radiusTop: 0.148, radiusBottom: 0.112 } as const
 
 /** World position helper: station origin + local offset. */
 export const at = (station: Vector3, x: number, y: number, z: number) => new Vector3(station.x + x, station.y + y, station.z + z)

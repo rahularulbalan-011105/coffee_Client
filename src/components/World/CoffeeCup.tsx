@@ -45,7 +45,7 @@ export default function CoffeeCup({ fill, foam, color = COFFEE_COLORS.withMilk, 
 
   return (
     <group ref={groupRef} position={position}>
-      <mesh geometry={tumblerGeo} material={m.brass} castShadow receiveShadow />
+      <mesh geometry={tumblerGeo} material={m.tumblerBrass} castShadow receiveShadow />
       <LiquidSurface
         initialColor="#6b3c1c"
         segments={detail === 'high' ? 40 : 24}

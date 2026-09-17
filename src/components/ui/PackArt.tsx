@@ -126,46 +126,70 @@ export function PackArt({ theme, name, sub, weight, variant = 'pouch', className
   )
 }
 
+/** Engraved band: dotted rows around a zigzag, as on traditional brassware. */
+function EngravedBand({ x0, x1, y, id }: { x0: number; x1: number; y: number; id: string }) {
+  const teeth = Math.round((x1 - x0) / 9)
+  const step = (x1 - x0) / teeth
+  const zig = Array.from({ length: teeth + 1 }, (_, i) => `${x0 + i * step},${y + (i % 2 ? -3.2 : 3.2)}`).join(' ')
+  const dots = (yy: number) =>
+    Array.from({ length: Math.round((x1 - x0) / 5) }, (_, i) => <circle key={`${yy}-${i}`} cx={x0 + 2.5 + i * 5} cy={yy} r="0.9" />)
+  return (
+    <g fill={`url(#e${id})`} stroke={`url(#e${id})`}>
+      {dots(y - 8)}
+      <polyline points={zig} fill="none" strokeWidth="1.1" />
+      {dots(y + 8)}
+    </g>
+  )
+}
+
 /** Brass dabara-tumbler set illustration for the gift card. */
 export function BrassSetArt({ className = '' }: { className?: string }) {
   const id = useId().replace(/:/g, '')
   return (
-    <svg viewBox="0 0 240 320" className={className} role="img" aria-label="Brass dabara and tumbler set">
+    <svg viewBox="0 0 240 320" className={className} role="img" aria-label="Engraved brass dabara and tumbler set">
       <defs>
         <linearGradient id={`b${id}`} x1="0" x2="1">
-          <stop offset="0" stopColor="#4a3112" />
-          <stop offset="0.22" stopColor="#c99a4c" />
-          <stop offset="0.38" stopColor="#f6e0ab" />
-          <stop offset="0.55" stopColor="#b8873d" />
-          <stop offset="0.85" stopColor="#5e3f17" />
-          <stop offset="1" stopColor="#2c1c0a" />
+          <stop offset="0" stopColor="#8a6428" />
+          <stop offset="0.2" stopColor="#d9b56b" />
+          <stop offset="0.42" stopColor="#f3dca4" />
+          <stop offset="0.62" stopColor="#d2a95c" />
+          <stop offset="0.88" stopColor="#9a7132" />
+          <stop offset="1" stopColor="#6d4c1e" />
         </linearGradient>
-        <radialGradient id={`c${id}`} cx="0.45" cy="0.4" r="0.6">
-          <stop offset="0" stopColor="#f1dcbc" />
-          <stop offset="0.6" stopColor="#c89a68" />
-          <stop offset="1" stopColor="#7a4d27" />
-        </radialGradient>
+        <linearGradient id={`i${id}`} x1="0" x2="1">
+          <stop offset="0" stopColor="#b38a45" />
+          <stop offset="0.5" stopColor="#e9cf93" />
+          <stop offset="1" stopColor="#8e6a2e" />
+        </linearGradient>
+        <linearGradient id={`e${id}`} x1="0" x2="1">
+          <stop offset="0" stopColor="#5a3e14" stopOpacity="0.55" />
+          <stop offset="0.5" stopColor="#7a5520" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#4a3210" stopOpacity="0.55" />
+        </linearGradient>
         <radialGradient id={`s${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#000" stopOpacity="0.6" />
+          <stop offset="0" stopColor="#000" stopOpacity="0.55" />
           <stop offset="1" stopColor="#000" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <ellipse cx="120" cy="286" rx="104" ry="14" fill={`url(#s${id})`} />
-      {/* Dabara — back half first, so the tumbler sits inside it */}
-      <ellipse cx="120" cy="226" rx="100" ry="16" fill="#2b1a0b" />
-      <path d="M20 226 a100 16 0 0 1 200 0" fill="none" stroke="#f3d99f" strokeWidth="3" />
-      {/* Tumbler */}
-      <path d="M80 92 h80 l-10 176 q-1 8 -9 8 h-42 q-8 0 -9 -8z" fill={`url(#b${id})`} />
-      <ellipse cx="120" cy="92" rx="40" ry="8" fill={`url(#c${id})`} />
-      <ellipse cx="120" cy="92" rx="40" ry="8" fill="none" stroke="#f6e0ab" strokeWidth="2.5" />
-      <path d="M84 120 h72 M88 250 h64" stroke="#3a260e" strokeOpacity="0.45" />
-      <rect x="92" y="96" width="7" height="170" fill="#fff" opacity="0.12" />
-      {/* Dabara front */}
-      <path d="M20 226 a100 16 0 0 0 200 0 q-4 52 -100 56 q-96 -4 -100 -56z" fill={`url(#b${id})`} />
-      <path d="M20 226 a100 16 0 0 0 200 0" fill="none" stroke="#f3d99f" strokeWidth="3" />
-      <g stroke="#f1e4d0" strokeOpacity="0.45" strokeWidth="1.5" fill="none" strokeLinecap="round">
-        <path d="M110 76 c-5 -8 5 -12 0 -22 s5 -12 0 -20" />
-        <path d="M128 78 c-5 -8 5 -12 0 -22 s5 -12 0 -18" />
+      <ellipse cx="120" cy="268" rx="112" ry="12" fill={`url(#s${id})`} />
+
+      {/* Dabara: deep straight wall, flat flared rim */}
+      <path d="M22 196 L26 258 Q27 266 36 266 L100 266 Q109 266 110 258 L114 196 Z" fill={`url(#b${id})`} />
+      <EngravedBand x0={25} x1={111} y={226} id={id} />
+      <ellipse cx="68" cy="194" rx="60" ry="10" fill={`url(#i${id})`} />
+      <ellipse cx="68" cy="194" rx="46" ry="6.5" fill="#6d4c1e" opacity="0.55" />
+      <path d="M8 194 a60 10 0 0 0 120 0" fill="none" stroke="#f6e3b4" strokeWidth="2" />
+
+      {/* Tumbler: tapered, flared lip */}
+      <path d="M140 128 L150 256 Q151 264 160 264 L204 264 Q213 264 214 256 L224 128 Z" fill={`url(#b${id})`} />
+      <EngravedBand x0={143} x1={221} y={168} id={id} />
+      <ellipse cx="182" cy="126" rx="48" ry="8" fill={`url(#i${id})`} />
+      <ellipse cx="182" cy="127" rx="38" ry="5.2" fill="#6d4c1e" opacity="0.55" />
+      <path d="M134 126 a48 8 0 0 0 96 0" fill="none" stroke="#f6e3b4" strokeWidth="2" />
+      <rect x="152" y="134" width="6" height="126" fill="#fff" opacity="0.14" />
+      <g stroke="#f1e4d0" strokeOpacity="0.4" strokeWidth="1.5" fill="none" strokeLinecap="round">
+        <path d="M172 112 c-5 -8 5 -12 0 -22 s5 -12 0 -20" />
+        <path d="M190 114 c-5 -8 5 -12 0 -22 s5 -12 0 -18" />
       </g>
     </svg>
   )

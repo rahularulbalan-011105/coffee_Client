@@ -20,13 +20,13 @@ interface DabaraVesselProps {
   liquid?: (s: LiquidState) => void
 }
 
-/** The dabara: a wide brass bowl with a rolled lip. */
+/** The dabara: a deep brass bowl with a flat, flared rim and an engraved band. */
 export function DabaraVessel({ detail, liquid }: DabaraVesselProps) {
   const m = getMaterials()
   const geo = useKit('dabara')
   return (
     <group>
-      <mesh geometry={geo} material={m.brass} castShadow receiveShadow />
+      <mesh geometry={geo} material={m.dabaraBrass} castShadow receiveShadow />
       {liquid && <LiquidSurface initialColor="#3a1d0c" drive={liquid} segments={detail === 'high' ? 56 : 28} />}
     </group>
   )
@@ -39,7 +39,7 @@ const REST = new Vector3().copy(STATIONS.dabara).add(LIP)
 const HIDDEN = new Vector3(REST.x - 0.3, REST.y, REST.z - 5)
 const POUR = new Vector3(STATIONS.tumbler.x - 0.07, STATIONS.tumbler.y + TUMBLER.height + 0.3, STATIONS.tumbler.z)
 /** Where the dabara settles for the hero shot: behind and left of the tumbler. */
-export const DABARA_FINAL = new Vector3(STATIONS.tumbler.x - 0.46, STATIONS.tumbler.y, STATIONS.tumbler.z - 0.46)
+export const DABARA_FINAL = new Vector3(STATIONS.tumbler.x - 0.62, STATIONS.tumbler.y, STATIONS.tumbler.z - 0.22)
 const FINAL = new Vector3().copy(DABARA_FINAL).add(LIP)
 const TILT_MAX = 1.42
 

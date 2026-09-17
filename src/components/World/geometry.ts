@@ -19,55 +19,80 @@ function cached(key: string, create: () => BufferGeometry) {
 
 const { height: TH, radiusTop: RT, radiusBottom: RB } = TUMBLER
 
-/** Tumbler inner wall (radius at height), used to size its liquid surface. */
-export const TUMBLER_INNER: P[] = [
-  [RB - 0.008, 0.03],
-  [RT - 0.008, TH - 0.012],
-]
+/* Traditional brass set (after the reference): outer profile first, then the inner wall. */
 
-const TUMBLER_PROFILE: P[] = [
+const TUMBLER_OUTER: P[] = [
   [0, 0],
   [RB - 0.004, 0],
-  [RB + 0.008, 0.006],
-  [RB + 0.01, 0.016],
-  [RB + 0.002, 0.026],
-  [RB, 0.04],
-  [RB + 0.006, 0.05],
-  [RB + 0.001, 0.058],
-  [RT - 0.004, TH - 0.06],
-  [RT + 0.004, TH - 0.05],
-  [RT - 0.002, TH - 0.042],
-  [RT, TH - 0.012],
-  [RT + 0.007, TH - 0.003],
-  [RT + 0.004, TH + 0.003],
-  [RT - 0.004, TH],
-  ...[...TUMBLER_INNER].reverse(),
-  [0, 0.03],
+  [RB, 0.004],
+  [RB + 0.002, 0.016],
+  [RB + (RT - RB) * 0.25, TH * 0.25],
+  [RB + (RT - RB) * 0.5, TH * 0.5],
+  [RB + (RT - RB) * 0.75, TH * 0.75],
+  [RT, TH - 0.03],
+  [RT + 0.006, TH - 0.014],
+  [RT + 0.016, TH - 0.003],
+  [RT + 0.021, TH + 0.002],
+]
+
+/** Tumbler inner wall (radius at height), used to size its liquid surface. */
+export const TUMBLER_INNER: P[] = [
+  [RB - 0.007, 0.024],
+  [RT - 0.007, TH - 0.03],
+  [RT + 0.004, TH - 0.008],
+]
+
+const TUMBLER_PROFILE: P[] = [...TUMBLER_OUTER, [RT + 0.017, TH + 0.005], ...[...TUMBLER_INNER].reverse(), [0, 0.024]]
+
+const DH = DABARA.height
+const DR = DABARA.radius
+
+const DABARA_OUTER: P[] = [
+  [0, 0],
+  [DR - 0.035, 0],
+  [DR - 0.02, 0.004],
+  [DR - 0.013, 0.02],
+  [DR - 0.008, DH * 0.35],
+  [DR - 0.004, DH * 0.7],
+  [DR, DH - 0.016],
+  [DR + 0.012, DH - 0.01],
+  [DABARA.rim - 0.01, DH - 0.006],
+  [DABARA.rim, DH - 0.002],
+  [DABARA.rim + 0.003, DH + 0.003],
 ]
 
 export const DABARA_INNER: P[] = [
-  [0.2, 0.018],
-  [0.24, 0.05],
-  [0.272, 0.1],
-  [0.29, 0.14],
-  [0.302, 0.166],
+  [DR - 0.04, 0.014],
+  [DR - 0.022, 0.03],
+  [DR - 0.016, DH * 0.35],
+  [DR - 0.012, DH * 0.7],
+  [DR - 0.008, DH - 0.004],
 ]
 
 const DABARA_PROFILE: P[] = [
-  [0, 0],
-  [0.18, 0],
-  [0.205, 0.004],
-  [0.218, 0.014],
-  [0.255, 0.05],
-  [0.284, 0.1],
-  [0.3, 0.14],
-  [0.312, 0.158],
-  [DABARA.rim, DABARA.height],
-  [DABARA.rim + 0.008, DABARA.height + 0.007],
-  [DABARA.rim - 0.004, DABARA.height + 0.011],
+  ...DABARA_OUTER,
+  [DABARA.rim - 0.004, DH + 0.006],
+  [DR + 0.01, DH + 0.004],
   ...[...DABARA_INNER].reverse(),
   [0, 0.014],
 ]
+
+/**
+ * Lathe whose v coordinate follows height on the outer wall (0 at the base, 1 at the rim),
+ * so an engraved band can be placed by height. Inner surfaces get v = 0 (plain metal).
+ */
+function vesselLathe(profile: P[], outerCount: number, height: number, seg: number) {
+  const g = new LatheGeometry(v(profile), seg)
+  const pos = g.attributes.position
+  const uv = g.attributes.uv
+  const n = profile.length
+  for (let i = 0; i < pos.count; i++) {
+    const j = i % n
+    uv.setY(i, j < outerCount ? Math.min(1, Math.max(0, pos.getY(i) / height)) : 0)
+  }
+  uv.needsUpdate = true
+  return g
+}
 
 const FILTER_LOWER: P[] = [
   [0, 0],
@@ -153,8 +178,8 @@ const GRINDER_BODY: P[] = [
   [0.0, 1.04],
 ]
 
-export const tumblerGeometry = (seg = 64) => cached(`tumbler${seg}`, () => new LatheGeometry(v(TUMBLER_PROFILE), seg))
-export const dabaraGeometry = (seg = 72) => cached(`dabara${seg}`, () => new LatheGeometry(v(DABARA_PROFILE), seg))
+export const tumblerGeometry = (seg = 64) => cached(`tumbler${seg}`, () => vesselLathe(TUMBLER_PROFILE, TUMBLER_OUTER.length, TH, seg))
+export const dabaraGeometry = (seg = 72) => cached(`dabara${seg}`, () => vesselLathe(DABARA_PROFILE, DABARA_OUTER.length, DH, seg))
 export const filterLowerGeometry = (seg = 56) => cached(`fl${seg}`, () => new LatheGeometry(v(FILTER_LOWER), seg))
 export const filterUpperGeometry = (seg = 56) => cached(`fu${seg}`, () => new LatheGeometry(v(FILTER_UPPER), seg))
 export const filterLidGeometry = (seg = 56) => cached(`lid${seg}`, () => new LatheGeometry(v(FILTER_LID), seg))
