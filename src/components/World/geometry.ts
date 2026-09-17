@@ -211,9 +211,10 @@ export function innerRadiusAt(profile: P[], y: number) {
  * cut, plus low-frequency irregularity so no two instances read as copies once scaled.
  * Local size ≈ 0.056 wide × 0.04 thick × 0.09 long.
  */
-export function beanGeometry(detail: 'high' | 'low' = 'high') {
+export function beanGeometry(detail: 'high' | 'low' | 'tiny' = 'high') {
   return cached(`bean-${detail}`, () => {
-    const sphere = detail === 'high' ? new SphereGeometry(1, 28, 20) : new SphereGeometry(1, 16, 12)
+    const sphere =
+      detail === 'high' ? new SphereGeometry(1, 28, 20) : detail === 'low' ? new SphereGeometry(1, 16, 12) : new SphereGeometry(1, 12, 8)
     sphere.deleteAttribute('uv')
     sphere.deleteAttribute('normal')
     const g = mergeVertices(sphere)

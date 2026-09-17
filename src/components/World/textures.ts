@@ -173,44 +173,6 @@ export function softDotTexture() {
   })
 }
 
-/** A bed of sun-drying green coffee, drawn bean by bean. Used under the 3D beans. */
-export function beanCarpetTexture() {
-  return make(
-    'bean-carpet',
-    1024,
-    (ctx, s) => {
-      const r = rng(64)
-      ctx.fillStyle = '#4c4a33'
-      ctx.fillRect(0, 0, s, s)
-      for (let i = 0; i < 5200; i++) {
-        const x = r() * s
-        const y = r() * s
-        const a = r() * Math.PI
-        const len = 11 + r() * 5
-        ctx.save()
-        ctx.translate(x, y)
-        ctx.rotate(a)
-        const tone = 0.8 + r() * 0.35
-        const g = ctx.createRadialGradient(-len * 0.25, -len * 0.2, 1, 0, 0, len)
-        g.addColorStop(0, `rgb(${Math.round(190 * tone)},${Math.round(190 * tone)},${Math.round(140 * tone)})`)
-        g.addColorStop(1, `rgb(${Math.round(110 * tone)},${Math.round(118 * tone)},${Math.round(74 * tone)})`)
-        ctx.fillStyle = g
-        ctx.beginPath()
-        ctx.ellipse(0, 0, len, len * 0.66, 0, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.strokeStyle = 'rgba(60,62,36,0.55)'
-        ctx.lineWidth = 1.2
-        ctx.beginPath()
-        ctx.moveTo(-len * 0.8, 0)
-        ctx.bezierCurveTo(-len * 0.3, -2, len * 0.3, 2, len * 0.8, 0)
-        ctx.stroke()
-        ctx.restore()
-      }
-    },
-    true,
-  )
-}
-
 /** Scattered raindrops as a normal map (for a wet clearcoat on leaves). */
 export function dropletNormal() {
   return make('droplets', 256, (ctx, s) => {
