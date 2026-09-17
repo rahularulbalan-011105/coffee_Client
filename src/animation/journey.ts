@@ -96,7 +96,7 @@ export const CAMERA_KEYS: CameraKey[] = [
   { at: 7.55, pos: [0.57, -31.2, 6.0], target: [0.82, -31.95, 3.05], fov: 32 },
   { at: 8.05, pos: [0.8, -31.3, 5.8], target: [0.95, -31.95, 3.0], fov: 32 },
   // Pour.
-  { at: 8.6, pos: [1.27, -31.1, 5.45], target: [1.04, -31.84, 2.95], fov: 32 },
+  { at: 8.6, pos: [1.27, -30.8, 5.3], target: [1.04, -31.9, 2.95], fov: 32 },
   { at: 9.1, pos: [1.32, -31.6, 5.2], target: [0.95, -32.18, 2.9], fov: 30 },
   // Final product shot, then pull back for the order counter.
   { at: 9.5, pos: [1.32, -31.68, 5.15], target: [0.88, -32.2, 2.85], fov: 30 },

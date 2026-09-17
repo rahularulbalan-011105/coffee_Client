@@ -181,6 +181,8 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
       camera={{ fov: 38, near: 0.4, far: 3000, position: [-3, 27, 44] }}
       gl={{ antialias: !postfx, alpha: false, powerPreference: 'high-performance', stencil: false }}
       onCreated={({ gl }) => {
+        // Per-material clipping (coffee level inside the tipped dabara).
+        gl.localClippingEnabled = true
         // Only a lost GPU context sends the page to its static fallback.
         gl.domElement.addEventListener('webglcontextlost', (e) => {
           e.preventDefault()

@@ -77,6 +77,20 @@ const DABARA_PROFILE: P[] = [
   [0, 0.014],
 ]
 
+/** The coffee that fills the dabara: its interior as a closed solid (cut at the level at runtime). */
+export function dabaraLiquidGeometry() {
+  return cached('dabara-liquid', () =>
+    new LatheGeometry(
+      v([
+        [0, DABARA_INNER[0][1] + 0.002],
+        ...DABARA_INNER.map(([r, y]) => [r - 0.004, y] as P),
+        [0, DH - 0.004],
+      ]),
+      48,
+    ),
+  )
+}
+
 /**
  * Lathe whose v coordinate follows height on the outer wall (0 at the base, 1 at the rim),
  * so an engraved band can be placed by height. Inner surfaces get v = 0 (plain metal).

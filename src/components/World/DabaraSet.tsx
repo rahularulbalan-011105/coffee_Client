@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Color, Object3D, Vector3, type Group, type SpotLight } from 'three'
+import { BackSide, Color, FrontSide, MeshBasicMaterial, MeshPhysicalMaterial, Object3D, Plane, Vector3, type Group, type Mesh, type SpotLight } from 'three'
 import { sceneState } from '../../animation/journey'
 import CoffeeCup, { tumblerLevelY } from './CoffeeCup'
 import CoffeePour, { type StreamState } from './CoffeePour'
@@ -8,7 +8,7 @@ import BeanFlow from './BeanFlow'
 import { useKit } from './models'
 import { LiquidSurface, type LiquidState } from './CoffeeBrew'
 import { Splash, Steam } from './Effects3D'
-import { DABARA_INNER, innerRadiusAt } from './geometry'
+import { DABARA_INNER, dabaraLiquidGeometry, innerRadiusAt } from './geometry'
 import { COFFEE_COLORS, getMaterials, PLANT_COLORS } from './materials'
 import { DABARA, STATIONS, TUMBLER } from './layout'
 import { easeInOut, easeOut, lerp, smooth, sub, window01 } from './math'
@@ -18,16 +18,25 @@ import { easeInOut, easeOut, lerp, smooth, sub, window01 } from './math'
 interface DabaraVesselProps {
   detail: 'high' | 'low'
   liquid?: (s: LiquidState) => void
+  /** Optional tilted-coffee body (shown while the dabara is tipped). */
+  body?: { front: MeshPhysicalMaterial; back: MeshBasicMaterial; refs: [React.Ref<Mesh>, React.Ref<Mesh>] }
 }
 
 /** The dabara: a deep brass bowl with a flat, flared rim and an engraved band. */
-export function DabaraVessel({ detail, liquid }: DabaraVesselProps) {
+export function DabaraVessel({ detail, liquid, body }: DabaraVesselProps) {
   const m = getMaterials()
   const geo = useKit('dabara')
   return (
     <group>
       <mesh geometry={geo} material={m.dabaraBrass} customDepthMaterial={m.plainDepth} castShadow receiveShadow />
       {liquid && <LiquidSurface initialColor="#3a1d0c" drive={liquid} segments={detail === 'high' ? 56 : 28} />}
+      {body && (
+        <>
+          {/* Inside faces seen through the cut read as the level coffee surface. */}
+          <mesh ref={body.refs[1]} geometry={dabaraLiquidGeometry()} material={body.back} visible={false} renderOrder={1} />
+          <mesh ref={body.refs[0]} geometry={dabaraLiquidGeometry()} material={body.front} visible={false} renderOrder={2} />
+        </>
+      )}
     </group>
   )
 }
@@ -45,6 +54,26 @@ const TILT_MAX = 1.42
 
 const mixed = new Color()
 const mouthDir = new Vector3()
+
+/** Coffee in the tipped dabara is a solid of its interior, cut by a level plane. */
+const LEVEL_PLANE = new Plane(new Vector3(0, -1, 0), 0)
+const bodyFront = new MeshPhysicalMaterial({
+  color: new Color('#3a1d0c'),
+  roughness: 0.1,
+  clearcoat: 1,
+  clearcoatRoughness: 0.08,
+  envMapIntensity: 0.5,
+  clippingPlanes: [LEVEL_PLANE],
+  side: FrontSide,
+})
+const bodyBack = new MeshBasicMaterial({ color: new Color('#5b3218'), clippingPlanes: [LEVEL_PLANE], side: BackSide })
+
+/** World-space y of a point given in the dabara's local frame, for a pivot pose. */
+function dabaraLocalToWorldY(pivotY: number, tilt: number, lx: number, ly: number) {
+  const x = lx - LIP.x
+  const y = ly - LIP.y
+  return pivotY + x * Math.sin(tilt) + y * Math.cos(tilt)
+}
 /** Where coffee leaves the dabara: inside the opening, near its lowest edge (relative to LIP). */
 const MOUTH = new Vector3(DABARA.radius * 0.72 - LIP.x, DABARA.height - LIP.y, 0)
 
@@ -87,6 +116,8 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
   const rim = useRef<SpotLight>(null)
   const sweep = useRef<SpotLight>(null)
   const target = useRef(new Object3D())
+  const bodyRefA = useRef<Mesh>(null)
+  const bodyRefB = useRef<Mesh>(null)
 
   useFrame(() => {
     const s = sceneState
@@ -96,6 +127,30 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
       dabaraPose(pv.position)
       pv.rotation.z = dabaraTilt(s.pour)
       pv.visible = s.transfer > 0.001 || s.pour > 0
+
+      // Coffee inside the tipped dabara: its surface stays level, reaches the mouth while
+      // pouring, and drains as the tumbler fills.
+      const tilt = pv.rotation.z
+      const amount = dabaraAmount()
+      const tipped = Math.abs(tilt) > 0.02 && s.pour < 0.86 && amount > 0.005
+      if (bodyRefA.current) bodyRefA.current.visible = tipped
+      if (bodyRefB.current) bodyRefB.current.visible = tipped
+      if (tipped) {
+        const restLevel = lerp(0.03, DABARA.height - 0.02, amount)
+        // Where the level would be if the coffee just sat in the bowl (probe near the far wall).
+        const still = dabaraLocalToWorldY(pv.position.y, tilt, -DABARA.radius * 0.6, restLevel)
+        // While pouring, the surface reaches the opening where the stream leaves.
+        const mouth = dabaraLocalToWorldY(pv.position.y, tilt, MOUTH.x + LIP.x, MOUTH.y + LIP.y)
+        const pouring = smooth(sub(s.pour, 0.28, 0.36))
+        const drain = smooth(sub(s.pour, 0.68, 0.86))
+        // Coffee brims at the opening while it pours, then runs out.
+        let level = lerp(still, mouth + 0.055 * (1 - drain) + 0.008, pouring)
+        level -= drain * 0.1
+        LEVEL_PLANE.constant = level
+        const milky = sub(s.milk, 0.05, 0.9)
+        bodyFront.color.copy(COFFEE_COLORS.decoction).lerp(COFFEE_COLORS.withMilk, milky)
+        bodyBack.color.copy(COFFEE_COLORS.decoction).lerp(COFFEE_COLORS.withMilk, milky).multiplyScalar(0.85)
+      }
     }
     const tb = tumbler.current
     if (tb) {
@@ -115,7 +170,7 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
   const dabaraLiquid = (st: LiquidState) => {
     const a = dabaraAmount()
     const tilt = dabaraTilt(sceneState.pour)
-    st.visible = a > 0.01 && Math.abs(tilt) < 0.4
+    st.visible = a > 0.01 && Math.abs(tilt) <= 0.02
     st.y = lerp(0.03, DABARA.height - 0.02, a)
     st.radius = innerRadiusAt(DABARA_INNER, st.y) * (1 - Math.abs(tilt) * 0.5)
     mixed.copy(COFFEE_COLORS.decoction).lerp(COFFEE_COLORS.withMilk, sub(sceneState.milk, 0.05, 0.9))
@@ -124,7 +179,11 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
     st.tilt = tilt
   }
 
-  const tumblerFill = () => sub(sceneState.pour, 0.3, 0.86)
+  // Fills quickly at first (a strong pour into an empty tumbler), then tops up gently.
+  const tumblerFill = () => {
+    const t = sub(sceneState.pour, 0.3, 0.86)
+    return 1 - (1 - t) * (1 - t)
+  }
   // Froth builds as the long pour finishes, then settles into a full crown for the hero shot.
   const tumblerFoam = () => Math.min(1, smooth(sub(sceneState.pour, 0.55, 0.92)) * 0.8 + sceneState.finale * 0.2)
 
@@ -170,7 +229,11 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
     <group ref={root}>
       <group ref={pivot} position={HIDDEN} visible={false}>
         <group position={[-LIP.x, -LIP.y, 0]}>
-          <DabaraVessel detail={detail} liquid={dabaraLiquid} />
+          <DabaraVessel
+            detail={detail}
+            liquid={dabaraLiquid}
+            body={{ front: bodyFront, back: bodyBack, refs: [bodyRefA, bodyRefB] }}
+          />
         </group>
       </group>
 
