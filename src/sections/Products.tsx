@@ -74,7 +74,7 @@ export default function Products() {
             </h2>
           </div>
           <p data-reveal="2" className="max-w-sm font-light leading-relaxed text-cream/60">
-            More coffees from the Western Ghats, and the brass and steel that turn them into a morning.
+            More coffees from the Western Ghats, and the engraved brass that turns them into a morning.
           </p>
         </div>
 

@@ -1,6 +1,6 @@
 import { Color, DoubleSide, MeshDepthMaterial, MeshLambertMaterial, RGBADepthPacking, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material, type Texture } from 'three'
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
-import { dabaraEngraving, tumblerEngraving } from './engraving'
+import { dabaraEngraving, filterLowerEngraving, filterUpperEngraving, tumblerEngraving } from './engraving'
 import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
 
 /**
@@ -94,11 +94,11 @@ function build() {
   })
 
   // Serving set: soft satin gold with a hand-engraved band (as in traditional brassware).
-  const satinBrass = (tex: { map: Texture; bump: Texture }) =>
+  const satinBrass = (tex?: { map: Texture; bump: Texture }) =>
     new MeshPhysicalMaterial({
       color: new Color('#e2bd72'),
-      map: tex.map,
-      bumpMap: tex.bump,
+      map: tex?.map ?? null,
+      bumpMap: tex?.bump ?? null,
       bumpScale: 1.4,
       metalness: 1,
       roughness: 0.36,
@@ -109,6 +109,11 @@ function build() {
     })
   const dabaraBrass = satinBrass(dabaraEngraving())
   const tumblerBrass = satinBrass(tumblerEngraving())
+  // The filter belongs to the same set.
+  const filterLowerBrass = satinBrass(filterLowerEngraving())
+  const filterUpperBrass = satinBrass(filterUpperEngraving())
+  const satinPlain = satinBrass()
+  const brassInner = new MeshStandardMaterial({ color: new Color('#6e5024'), metalness: 1, roughness: 0.5, side: DoubleSide })
 
   const brassDark = new MeshStandardMaterial({
     color: new Color('#8e6630'),
@@ -259,7 +264,7 @@ function build() {
   // Shadows don't need the engraving texture: share the plain depth shader.
   const plainDepth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
 
-  return { brass, dabaraBrass, tumblerBrass, plainDepth, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
+  return { brass, dabaraBrass, tumblerBrass, filterLowerBrass, filterUpperBrass, satinPlain, brassInner, plainDepth, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
 }
 
 export function getMaterials() {

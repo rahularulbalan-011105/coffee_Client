@@ -72,13 +72,13 @@ export const COLLECTION: Product[] = [
     badge: 'Heirloom',
   },
   {
-    id: 'steel-filter',
+    id: 'brass-filter',
     name: 'Traditional Filter',
-    tagline: 'Stainless steel, two-tier',
-    description: 'The classic South Indian filter with pressing disc and lid. Makes four strong cups.',
+    tagline: 'Engraved brass, two-tier',
+    description: 'The classic South Indian filter with pressing disc and lid, engraved to match the dabara set.',
     weight: '4 cups',
     price: 890,
-    notes: ['Food-grade steel'],
+    notes: ['Tin-lined brass'],
     art: { kind: 'filter' },
   },
   {

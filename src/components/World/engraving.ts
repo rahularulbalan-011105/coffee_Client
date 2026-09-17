@@ -9,7 +9,7 @@ import { make } from './textures'
 
 interface BandSpec {
   /** Band rows as [centre v, kind]. v = 0 at the base, 1 at the rim. */
-  rows: [number, 'dots' | 'zigzag' | 'line'][]
+  rows: [number, 'dots' | 'zigzag' | 'line' | 'wave' | 'dashes'][]
 }
 
 const TILE = 512
@@ -28,6 +28,34 @@ function drawBand(ctx: CanvasRenderingContext2D, spec: BandSpec, ink: string, wi
       for (let i = 0; i < n; i++) {
         ctx.beginPath()
         ctx.arc(((i + 0.5) / n) * s, y, width * 1.1, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    } else if (kind === 'dashes') {
+      const n = 22
+      ctx.lineWidth = width * 0.8
+      for (let i = 0; i < n; i++) {
+        const x = (i / n) * s
+        ctx.beginPath()
+        ctx.moveTo(x + 3, y)
+        ctx.lineTo(x + s / n - 8, y)
+        ctx.stroke()
+      }
+    } else if (kind === 'wave') {
+      // Gentle running wave, with a dot tucked under every crest.
+      const waves = 4
+      const amp = s * 0.012
+      ctx.lineWidth = width
+      ctx.beginPath()
+      for (let i = 0; i <= 96; i++) {
+        const x = (i / 96) * s
+        const yy = y + Math.sin((i / 96) * Math.PI * 2 * waves) * amp
+        if (i === 0) ctx.moveTo(x, yy)
+        else ctx.lineTo(x, yy)
+      }
+      ctx.stroke()
+      for (let i = 0; i < waves; i++) {
+        ctx.beginPath()
+        ctx.arc(((i + 0.25) / waves) * s, y + amp * 2.4, width * 0.7, 0, Math.PI * 2)
         ctx.fill()
       }
     } else if (kind === 'line') {
@@ -118,3 +146,18 @@ export const tumblerEngraving = () =>
     },
     6,
   )
+
+/** Filter chambers: the same hand-engraved language — dotted rows around a running wave. */
+const filterBand = (v: number): BandSpec['rows'] => [
+  [v + 0.035, 'dots'],
+  [v, 'wave'],
+  [v - 0.035, 'dashes'],
+]
+
+/** Lower chamber (v over its 0.62 height): two bands. */
+export const filterLowerEngraving = () =>
+  engravingTextures('engrave-filter-lower', { rows: [...filterBand(0.8), ...filterBand(0.42)] }, 10)
+
+/** Upper chamber (v over its 0.6 height; the lowest 20% hides inside the lower chamber). */
+export const filterUpperEngraving = () =>
+  engravingTextures('engrave-filter-upper', { rows: [...filterBand(0.83), ...filterBand(0.45)] }, 10)

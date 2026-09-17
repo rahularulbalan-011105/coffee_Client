@@ -108,48 +108,41 @@ function vesselLathe(profile: P[], outerCount: number, height: number, seg: numb
   return g
 }
 
-const FILTER_LOWER: P[] = [
+/* Brass filter (after the reference): two flush cylinders and a stepped cap with a ball knob. */
+
+const FILTER_LOWER_OUTER: P[] = [
   [0, 0],
-  [0.28, 0],
-  [0.296, 0.008],
-  [0.3, 0.03],
-  [0.3, 0.04],
-  [0.305, 0.05],
-  [0.3, 0.06],
-  [0.3, 0.57],
-  [0.312, 0.6],
-  [0.318, 0.615],
-  [0.31, 0.622],
-  [0.29, 0.61],
-  [0.29, 0.02],
-  [0, 0.02],
+  [0.29, 0],
+  [0.298, 0.006],
+  [0.3, 0.02],
+  [0.3, 0.6],
+  [0.302, 0.614],
+  [0.298, 0.622],
 ]
+const FILTER_LOWER: P[] = [...FILTER_LOWER_OUTER, [0.29, 0.62], [0.29, 0.02], [0, 0.02]]
 
-const FILTER_UPPER: P[] = [
-  [0.262, 0],
-  [0.27, 0.1],
-  [0.276, 0.116],
-  [0.326, 0.12],
-  [0.334, 0.13],
-  [0.33, 0.14],
-  [0.29, 0.142],
-  [0.29, 0.575],
-  [0.302, 0.592],
-  [0.298, 0.602],
-  [0.28, 0.598],
-  [0.279, 0.14],
-  [0.258, 0.12],
-  [0.252, 0.004],
+// Upper chamber, local y = 0 at its base (which slides 0.12 into the lower chamber).
+const FILTER_UPPER_OUTER: P[] = [
+  [0.284, 0],
+  [0.286, 0.118],
+  [0.3, 0.121],
+  [0.3, 0.588],
+  [0.302, 0.598],
+  [0.296, 0.604],
 ]
+const FILTER_UPPER: P[] = [...FILTER_UPPER_OUTER, [0.284, 0.6], [0.276, 0.12], [0.274, 0.004]]
 
+// Lid, local y = 0 at the chamber rim: a skirt over the rim, a step, a low dome.
 const FILTER_LID: P[] = [
-  [0.305, 0],
-  [0.312, 0.012],
-  [0.3, 0.03],
-  [0.27, 0.06],
-  [0.2, 0.095],
-  [0.1, 0.115],
-  [0, 0.12],
+  [0.296, -0.038],
+  [0.308, -0.034],
+  [0.309, 0.03],
+  [0.304, 0.04],
+  [0.272, 0.046],
+  [0.268, 0.058],
+  [0.2, 0.072],
+  [0.1, 0.08],
+  [0, 0.082],
 ]
 
 const PRESS_DISC: P[] = [
@@ -194,8 +187,8 @@ const GRINDER_BODY: P[] = [
 
 export const tumblerGeometry = (seg = 64) => cached(`tumbler${seg}`, () => vesselLathe(TUMBLER_PROFILE, TUMBLER_OUTER.length, TH, seg))
 export const dabaraGeometry = (seg = 72) => cached(`dabara${seg}`, () => vesselLathe(DABARA_PROFILE, DABARA_OUTER.length, DH, seg))
-export const filterLowerGeometry = (seg = 56) => cached(`fl${seg}`, () => new LatheGeometry(v(FILTER_LOWER), seg))
-export const filterUpperGeometry = (seg = 56) => cached(`fu${seg}`, () => new LatheGeometry(v(FILTER_UPPER), seg))
+export const filterLowerGeometry = (seg = 56) => cached(`fl${seg}`, () => vesselLathe(FILTER_LOWER, FILTER_LOWER_OUTER.length, 0.62, seg))
+export const filterUpperGeometry = (seg = 56) => cached(`fu${seg}`, () => vesselLathe(FILTER_UPPER, FILTER_UPPER_OUTER.length, 0.6, seg))
 export const filterLidGeometry = (seg = 56) => cached(`lid${seg}`, () => new LatheGeometry(v(FILTER_LID), seg))
 export const pressDiscGeometry = (seg = 48) => cached(`press${seg}`, () => new LatheGeometry(v(PRESS_DISC), seg))
 export const grinderBodyGeometry = (seg = 56) => cached(`grinder${seg}`, () => new LatheGeometry(v(GRINDER_BODY), seg))

@@ -50,7 +50,6 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
   const upperGeo = useKit('filterUpper')
   const lidGeo = useKit('filterLid')
   const pressGeo = useKit('pressDisc')
-  const seg = detail === 'high' ? 64 : 32
   const root = useRef<Group>(null)
   const kettle = useRef<Group>(null)
 
@@ -178,31 +177,27 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
       {/* Lower chamber, parented to its pouring lip */}
       <group ref={lowerPivot} position={REST_PIVOT}>
         <group position={[-LIP.x, -LIP.y, 0]}>
-          <mesh geometry={lowerGeo} material={m.steel} castShadow receiveShadow />
-          <mesh position-y={0.021} rotation-x={-Math.PI / 2} material={m.steelInner}>
+          <mesh geometry={lowerGeo} material={m.filterLowerBrass} customDepthMaterial={m.plainDepth} castShadow receiveShadow />
+          <mesh position-y={0.021} rotation-x={-Math.PI / 2} material={m.brassInner}>
             <circleGeometry args={[0.29, 32]} />
           </mesh>
           <LiquidSurface initialColor="#1d0d05" drive={decoction} segments={detail === 'high' ? 48 : 24} />
-          {/* Brass band — the house signature on steel */}
-          <mesh position-y={0.3} material={m.brass} rotation-x={Math.PI / 2}>
-            <torusGeometry args={[0.302, 0.006, 8, seg]} />
-          </mesh>
         </group>
       </group>
 
       {/* Upper chamber assembly */}
       <group ref={upper} position={[f.x, f.y + FILTER.upperBottom, f.z]}>
-        <mesh geometry={upperGeo} material={m.steel} castShadow receiveShadow />
+        <mesh geometry={upperGeo} material={m.filterUpperBrass} customDepthMaterial={m.plainDepth} castShadow receiveShadow />
         <mesh position-y={0.006} rotation-x={-Math.PI / 2} material={m.perforated}>
-          <circleGeometry args={[0.256, 40]} />
+          <circleGeometry args={[0.274, 40]} />
         </mesh>
         <mesh ref={mound} position-y={0.012} material={m.powder} visible={false}>
           <sphereGeometry args={[1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
         </mesh>
         <LiquidSurface initialColor="#2a160b" drive={water} segments={32} />
         <group ref={press} visible={false}>
-          <mesh geometry={pressGeo} material={m.steel} castShadow />
-          <mesh position-y={0.17} material={m.steel} castShadow>
+          <mesh geometry={pressGeo} material={m.satinPlain} castShadow />
+          <mesh position-y={0.17} material={m.satinPlain} castShadow>
             <cylinderGeometry args={[0.011, 0.011, 0.26, 10]} />
           </mesh>
           <mesh position-y={0.31} material={m.brass} castShadow>
@@ -210,12 +205,13 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
           </mesh>
         </group>
         <group ref={lid} visible={false}>
-          <mesh geometry={lidGeo} material={m.steel} castShadow />
-          <mesh position-y={0.14} material={m.brass} castShadow>
-            <sphereGeometry args={[0.03, 16, 12]} />
+          <mesh geometry={lidGeo} material={m.satinPlain} castShadow />
+          {/* Ball knob on a short turned stem */}
+          <mesh position-y={0.098} material={m.satinPlain} castShadow>
+            <cylinderGeometry args={[0.012, 0.03, 0.035, 20]} />
           </mesh>
-          <mesh position-y={0.118} material={m.brass}>
-            <cylinderGeometry args={[0.014, 0.02, 0.03, 12]} />
+          <mesh position-y={0.14} material={m.satinPlain} castShadow>
+            <sphereGeometry args={[0.034, 24, 16]} />
           </mesh>
         </group>
       </group>

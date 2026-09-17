@@ -195,32 +195,52 @@ export function BrassSetArt({ className = '' }: { className?: string }) {
   )
 }
 
-/** Two-tier South Indian filter in brushed steel. */
+/** Two-tier South Indian filter in engraved brass, matching the dabara set. */
 export function FilterArt({ className = '' }: { className?: string }) {
   const id = useId().replace(/:/g, '')
   return (
-    <svg viewBox="0 0 240 320" className={className} role="img" aria-label="Stainless steel South Indian filter">
+    <svg viewBox="0 0 240 320" className={className} role="img" aria-label="Engraved brass South Indian filter">
       <defs>
-        <linearGradient id={`s${id}`} x1="0" x2="1">
-          <stop offset="0" stopColor="#3c3e40" />
-          <stop offset="0.25" stopColor="#c9ccce" />
-          <stop offset="0.4" stopColor="#f3f4f4" />
-          <stop offset="0.6" stopColor="#9a9da0" />
-          <stop offset="1" stopColor="#2b2c2e" />
+        <linearGradient id={`b${id}`} x1="0" x2="1">
+          <stop offset="0" stopColor="#8a6428" />
+          <stop offset="0.2" stopColor="#d9b56b" />
+          <stop offset="0.42" stopColor="#f3dca4" />
+          <stop offset="0.62" stopColor="#d2a95c" />
+          <stop offset="0.88" stopColor="#9a7132" />
+          <stop offset="1" stopColor="#6d4c1e" />
+        </linearGradient>
+        <linearGradient id={`e${id}`} x1="0" x2="1">
+          <stop offset="0" stopColor="#5a3e14" stopOpacity="0.55" />
+          <stop offset="0.5" stopColor="#7a5520" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#4a3210" stopOpacity="0.55" />
         </linearGradient>
         <radialGradient id={`h${id}`} cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#000" stopOpacity="0.6" />
           <stop offset="1" stopColor="#000" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <ellipse cx="120" cy="292" rx="80" ry="11" fill={`url(#h${id})`} />
-      <path d="M62 170 h116 v112 q0 8 -8 8 h-100 q-8 0 -8 -8z" fill={`url(#s${id})`} />
-      <rect x="58" y="164" width="124" height="10" rx="4" fill={`url(#s${id})`} />
-      <path d="M68 92 h104 v74 h-104z" fill={`url(#s${id})`} />
-      <rect x="62" y="84" width="116" height="10" rx="4" fill={`url(#s${id})`} />
-      <path d="M64 84 q56 -40 112 0z" fill={`url(#s${id})`} />
-      <rect x="112" y="52" width="16" height="14" rx="4" fill="#c9a35b" />
-      <rect x="62" y="228" width="116" height="3" fill="#c9a35b" opacity="0.8" />
+      <ellipse cx="120" cy="296" rx="72" ry="10" fill={`url(#h${id})`} />
+      {/* Lower and upper chambers, flush */}
+      <path d="M70 180 H170 V286 Q170 292 164 292 H76 Q70 292 70 286 Z" fill={`url(#b${id})`} />
+      <rect x="70" y="84" width="100" height="98" fill={`url(#b${id})`} />
+      <path d="M70 181 H170" stroke="#5a3e14" strokeOpacity="0.6" strokeWidth="1.5" />
+      <path d="M70 183 H170" stroke="#f6e3b4" strokeOpacity="0.5" />
+      {[112, 150, 214, 256].map((y) => (
+        <g key={y} stroke={`url(#e${id})`} fill={`url(#e${id})`}>
+          {Array.from({ length: 20 }, (_, i) => (
+            <circle key={i} cx={73 + i * 4.9} cy={y - 7} r="0.8" />
+          ))}
+          <path d={`M72 ${y} ${Array.from({ length: 12 }, (_, i) => `q2 ${i % 2 ? 3 : -3} 8.1 0`).join(' ')}`} fill="none" strokeWidth="1" />
+          <path d={`M72 ${y + 7} H168`} strokeDasharray="4 2" strokeWidth="1" />
+        </g>
+      ))}
+      {/* Stepped lid and ball knob */}
+      <rect x="66" y="70" width="108" height="18" rx="3" fill={`url(#b${id})`} />
+      <path d="M78 70 Q120 56 162 70 Z" fill={`url(#b${id})`} />
+      <path d="M114 62 L117 50 H123 L126 62 Z" fill={`url(#b${id})`} />
+      <circle cx="120" cy="44" r="9" fill={`url(#b${id})`} />
+      <circle cx="117" cy="41" r="2.5" fill="#fff6dc" opacity="0.7" />
+      <rect x="84" y="88" width="6" height="200" fill="#fff" opacity="0.12" />
     </svg>
   )
 }
