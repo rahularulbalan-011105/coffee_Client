@@ -12,7 +12,7 @@ type StoryId = Exclude<ChapterId, 'order'>
 
 const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' | 'dark' }> = {
   estate: {
-    height: 190,
+    height: 125,
     tone: 'mist',
     copy: {
       number: '01',
@@ -23,7 +23,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   harvest: {
-    height: 170,
+    height: 115,
     tone: 'mist',
     copy: {
       number: '02',
@@ -34,7 +34,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   beans: {
-    height: 160,
+    height: 110,
     copy: {
       number: '03',
       eyebrow: 'The drying yard',
@@ -44,7 +44,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   processing: {
-    height: 170,
+    height: 115,
     copy: {
       number: '04',
       eyebrow: 'Roasting',
@@ -54,7 +54,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   grinding: {
-    height: 160,
+    height: 110,
     copy: {
       number: '05',
       eyebrow: 'Grinding',
@@ -64,7 +64,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   filtering: {
-    height: 170,
+    height: 115,
     copy: {
       number: '06',
       eyebrow: 'The filter',
@@ -74,7 +74,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   brewing: {
-    height: 160,
+    height: 110,
     copy: {
       number: '07',
       eyebrow: 'The decoction',
@@ -84,7 +84,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   dabara: {
-    height: 160,
+    height: 110,
     copy: {
       number: '08',
       eyebrow: 'The dabara',
@@ -94,7 +94,7 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
     },
   },
   pouring: {
-    height: 180,
+    height: 120,
     copy: {
       number: '09',
       eyebrow: 'The pour',

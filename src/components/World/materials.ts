@@ -1,4 +1,4 @@
-import { Color, DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material } from 'three'
+import { Color, DoubleSide, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material } from 'three'
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
 import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
 
@@ -75,7 +75,7 @@ function fadeGrazingCards(material: Material) {
       .replace('#include <common>', '#include <common>\nvarying float vFacing;')
       .replace('#include <alphatest_fragment>', 'diffuseColor.a *= smoothstep(0.08, 0.4, vFacing);\n#include <alphatest_fragment>')
   }
-  material.customProgramCacheKey = () => 'foliage-card'
+  material.customProgramCacheKey = () => `foliage-card-${material.type}`
 }
 
 function build() {
@@ -205,17 +205,12 @@ function build() {
     envMapIntensity: 0.6,
   })
   fadeGrazingCards(leafCard)
+  // Distant foliage: same painted sprigs, cheap per-vertex lighting (it is small on screen).
   const canopyTex = canopyClusterTextures()
-  const canopyCard = new MeshStandardMaterial({
-    map: canopyTex.map,
-    normalMap: canopyTex.normal,
-    alphaTest: 0.5,
-    side: DoubleSide,
-    roughness: 0.65,
-    metalness: 0,
-    envMapIntensity: 0.4,
-  })
+  const canopyCard = new MeshLambertMaterial({ map: canopyTex.map, alphaTest: 0.5, side: DoubleSide })
   fadeGrazingCards(canopyCard)
+  const leafCardFar = new MeshLambertMaterial({ map: coffeeTex.map, alphaTest: 0.5, side: DoubleSide })
+  fadeGrazingCards(leafCardFar)
 
   const cherry = new MeshPhysicalMaterial({
     color: new Color('#ffffff'),
@@ -243,7 +238,7 @@ function build() {
     roughness: 0.2,
   })
 
-  return { brass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, canopyCard, cherry, bark, enamel, ember }
+  return { brass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
 }
 
 export function getMaterials() {

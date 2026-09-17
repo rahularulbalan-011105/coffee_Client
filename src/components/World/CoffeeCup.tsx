@@ -58,7 +58,7 @@ export default function CoffeeCup({ fill, foam, color = COFFEE_COLORS.withMilk, 
           s.foam = Math.min(0.9, f * 1.2)
         }}
       />
-      <mesh ref={dome} material={foamMaterial} visible={false} castShadow>
+      <mesh ref={dome} material={foamMaterial} visible={false}>
         <sphereGeometry args={[1, 32, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
       </mesh>
     </group>

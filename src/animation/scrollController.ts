@@ -19,8 +19,10 @@ export function initSmoothScroll() {
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
 
   lenis = new Lenis({
-    duration: 1.15,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    // Lerp mode: each frame closes a fixed share of the gap. Continuous trackpad input
+    // (many tiny wheel events) glides instead of re-triggering an easing curve.
+    lerp: 0.1,
+    wheelMultiplier: 1,
     smoothWheel: !prefersReducedMotion(),
     // Native touch scrolling on phones: momentum feels right and never fights the pin.
     syncTouch: false,

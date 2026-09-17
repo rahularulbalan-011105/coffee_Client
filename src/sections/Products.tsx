@@ -61,7 +61,7 @@ export default function Products() {
   useReveal(root)
 
   return (
-    <section id="products" ref={root} className="relative overflow-hidden bg-espresso py-28 md:py-40">
+    <section id="products" ref={root} className="relative overflow-hidden bg-espresso py-20 md:py-28">
       <div className="pointer-events-none absolute -left-40 top-10 h-[36rem] w-[36rem] rounded-full bg-[radial-gradient(circle,rgb(47_74_54/0.35),transparent_65%)]" />
       <div className="relative mx-auto max-w-[92rem] px-6 md:px-10">
         <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
@@ -78,7 +78,7 @@ export default function Products() {
           </p>
         </div>
 
-        <ul className="mt-16 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <ul className="mt-12 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {COLLECTION.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} />
           ))}

@@ -280,6 +280,8 @@ function Terraces({ detail }: { detail: Detail }) {
     const r = rng(21)
     const cards: Matrix4[] = []
     const cardCols: Color[] = []
+    const farCards: Matrix4[] = []
+    const farCols: Color[] = []
     const rowStep = detail === 'high' ? 12 : 16
     const along = detail === 'high' ? 6.5 : 8.5
 
@@ -298,7 +300,8 @@ function Terraces({ detail }: { detail: Detail }) {
         const n = dist < 40 ? (detail === 'high' ? 70 : 34) : dist < 90 ? (detail === 'high' ? 26 : 14) : detail === 'high' ? 12 : 7
         const size = (dist < 40 ? 3.2 : dist < 90 ? 4.6 : 6.2) * s
         const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(2.1)
-        addBush(cards, cardCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
+        if (dist < 40) addBush(cards, cardCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
+        else addBush(farCards, farCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
       }
     }
 
@@ -306,10 +309,15 @@ function Terraces({ detail }: { detail: Detail }) {
     const hx = BRANCH.x + 3.5
     const hz = BRANCH.z - 8.5
     addBush(cards, cardCols, r, hx, terrainHeight(BRANCH.x, BRANCH.z) + 8.5, hz, 5.5, 8, detail === 'high' ? 85 : 45, 3.0, new Color('#3a6a2f').multiplyScalar(2))
-    return { cards, cardCols }
+    return { cards, cardCols, farCards, farCols }
   }, [detail])
 
-  return <Instances geometry={cardGeo} material={m.leafCard} mats={data.cards} cols={data.cardCols} />
+  return (
+    <group>
+      <Instances geometry={cardGeo} material={m.leafCard} mats={data.cards} cols={data.cardCols} />
+      <Instances geometry={cardGeo} material={m.leafCardFar} mats={data.farCards} cols={data.farCols} />
+    </group>
+  )
 }
 
 /* ------------------------------------------------------------- forest + trees */
@@ -333,7 +341,7 @@ function Forest({ detail }: { detail: Detail }) {
     const darkGreens = ['#1d3822', '#26452a', '#18301b', '#2c4c2e']
 
     // Forest canopy across the valley and the far hills: clumps of sprig cards.
-    const clumps = detail === 'high' ? 520 : 220
+    const clumps = detail === 'high' ? 300 : 150
     for (let i = 0; i < clumps; i++) {
       const z = -110 - r() * 280
       const spread = 120 + Math.max(0, -z) * 1.1
@@ -341,7 +349,7 @@ function Forest({ detail }: { detail: Detail }) {
       const y = terrainHeight(x, z)
       const sz = 9 + r() * 10
       const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2)
-      addBush(cards, cardCols, r, x, y + sz * 0.5, z, sz, sz * 0.75, detail === 'high' ? 9 : 6, sz * 1.25, tint)
+      addBush(cards, cardCols, r, x, y + sz * 0.5, z, sz, sz * 0.75, detail === 'high' ? 8 : 6, sz * 1.35, tint)
     }
 
     // A few tall silver oaks, as in the hills of Chikmagalur.

@@ -37,11 +37,11 @@ const Chapter = forwardRef<HTMLElement, ChapterProps>(function Chapter({ id, cop
       if (prefersReducedMotion()) return
       const tl = gsap.timeline({
         defaults: { ease: 'none' },
-        scrollTrigger: { trigger: el, start: first ? 'top top' : 'top 70%', end: 'bottom 45%', scrub: 0.5 },
+        scrollTrigger: { trigger: el, start: first ? 'top top' : 'top 85%', end: 'bottom 30%', scrub: true },
       })
-      if (!first) tl.fromTo(content, { autoAlpha: 0, y: 60 }, { autoAlpha: 1, y: 0, duration: 0.22, ease: 'power2.out' })
-      tl.to(content, { autoAlpha: 1, duration: first ? 0.6 : 0.5 })
-      tl.to(content, { autoAlpha: 0, y: -50, duration: 0.25, ease: 'power2.in' })
+      if (!first) tl.fromTo(content, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.2, ease: 'power2.out' })
+      tl.to(content, { autoAlpha: 1, duration: first ? 0.7 : 0.6 })
+      tl.to(content, { autoAlpha: 0, y: -40, duration: 0.2, ease: 'power2.in' })
     }, el)
     return () => ctx.revert()
   }, [first])

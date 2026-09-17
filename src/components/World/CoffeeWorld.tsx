@@ -1,7 +1,7 @@
 import { Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei'
-import { PCFShadowMap, type Group } from 'three'
+import { PCFShadowMap, Vector3, type Camera, type Group, type Object3D, type Scene, type SpotLight, type WebGLRenderer } from 'three'
 import { sceneState } from '../../animation/journey'
 import type { QualitySettings } from '../../hooks/useQuality'
 import Atmosphere from './Atmosphere'
@@ -28,6 +28,49 @@ interface CoffeeWorldProps {
 }
 
 /**
+ * compileAsync does not cover the shadow pass. Render one shadow map with every object
+ * visible and the shadow-casting light covering the whole world, so the depth shaders
+ * compile now (behind the loader) instead of stalling the first scroll.
+ */
+function warmShadowShaders(gl: WebGLRenderer, scene: Scene, camera: Camera) {
+  const hidden: Object3D[] = []
+  scene.traverse((o) => {
+    if (!o.visible) {
+      hidden.push(o)
+      o.visible = true
+    }
+  })
+  const lights: { light: SpotLight; angle: number; distance: number; pos: Vector3; target: Vector3 }[] = []
+  scene.traverse((o) => {
+    const l = o as SpotLight
+    if (!l.isSpotLight || !l.castShadow) return
+    lights.push({ light: l, angle: l.angle, distance: l.distance, pos: l.position.clone(), target: l.target.position.clone() })
+    l.angle = 1.5
+    l.distance = 0
+    l.position.set(0, 400, 0)
+    l.target.position.set(0, -20, 0)
+    l.target.updateMatrixWorld()
+  })
+  const far = (l: SpotLight) => l.shadow.camera
+  lights.forEach(({ light }) => {
+    far(light).far = 2000
+    far(light).updateProjectionMatrix()
+  })
+  gl.shadowMap.needsUpdate = true
+  gl.render(scene, camera)
+  for (const { light, angle, distance, pos, target } of lights) {
+    light.angle = angle
+    light.distance = distance
+    light.position.copy(pos)
+    light.target.position.copy(target)
+    light.target.updateMatrixWorld()
+    far(light).far = 10
+    far(light).updateProjectionMatrix()
+  }
+  hidden.forEach((o) => (o.visible = false))
+}
+
+/**
  * Compiles every material up front with KHR_parallel_shader_compile (three's compileAsync),
  * so the page never freezes while shaders build; signals ready once they are linked.
  */
@@ -50,29 +93,68 @@ function WarmUp({ onReady, world }: { onReady?: () => void; world: React.RefObje
     gl.debug.checkShaderErrors = import.meta.env.DEV
     const done = gl.compileAsync(scene, camera)
     hidden.forEach((o) => (o.visible = false))
-    // Rendering before linking finishes would block the main thread — wait.
-    if (world.current) world.current.visible = false
+    // Rendering before linking finishes would block the main thread — hide the drawables
+    // (but not the lights: the light count is part of every shader's key) until then.
+    const parked: Object3D[] = []
+    world.current?.traverse((o) => {
+      const r = o as Object3D & { isMesh?: boolean; isPoints?: boolean; isLine?: boolean }
+      if ((r.isMesh || r.isPoints || r.isLine) && o.visible) {
+        o.visible = false
+        parked.push(o)
+      }
+    })
     done
       .catch(() => undefined)
       .then(() => {
         if (cancelled) return
+        parked.forEach((o) => (o.visible = true))
+        warmShadowShaders(gl, scene, camera)
         compiled.current = true
         if (import.meta.env.DEV) {
           const w = window as unknown as { __gl?: unknown; __programsAtWarmUp?: number }
           w.__gl = gl
           w.__programsAtWarmUp = gl.info.programs?.length
         }
-        if (world.current) world.current.visible = true
       })
     return () => {
       cancelled = true
+      parked.forEach((o) => (o.visible = true))
     }
   }, [gl, scene, camera, world])
 
+  // Then render a few real frames (through the post-processing passes) with every object
+  // forced visible, so pass-specific shader variants also compile before the page appears.
+  const forced = useRef<Object3D[]>([])
   useFrame(() => {
+    forced.current.forEach((o) => (o.visible = false))
+    forced.current = []
     if (!compiled.current) return
     frames.current++
-    if (frames.current === 2) onReady?.()
+    if (frames.current <= 3) {
+      scene.traverse((o) => {
+        if (!o.visible) {
+          o.visible = true
+          forced.current.push(o)
+        }
+      })
+    }
+    if (frames.current === 5) onReady?.()
+  })
+  return null
+}
+
+/**
+ * The estate is the most expensive stretch; render it at a slightly lower pixel ratio on
+ * high-density screens so two-finger scrolling stays fluid, then restore full sharpness.
+ */
+function EstateResolution({ max }: { max: number }) {
+  const setDpr = useThree((s) => s.setDpr)
+  const inEstate = useRef<boolean | null>(null)
+  useFrame(() => {
+    const now = sceneState.pos < 2.3
+    if (now === inEstate.current) return
+    inEstate.current = now
+    setDpr(Math.min(window.devicePixelRatio, now ? Math.min(max, 1.25) : max))
   })
   return null
 }
@@ -146,6 +228,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
 
           {postfx && <PostFX dof={quality.dof} />}
           <WarmUp onReady={onReady} world={world} />
+          {!degraded && <EstateResolution max={Array.isArray(quality.dpr) ? quality.dpr[1] : quality.dpr} />}
         </KitProvider>
       </Suspense>
     </Canvas>

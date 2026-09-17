@@ -49,7 +49,7 @@ export default function OurStory() {
   }, [])
 
   return (
-    <section id="story" ref={root} className="relative overflow-hidden bg-parchment py-28 text-ink md:py-40">
+    <section id="story" ref={root} className="relative overflow-hidden bg-parchment py-20 text-ink md:py-28">
       <span
         ref={watermark}
         aria-hidden="true"
@@ -85,7 +85,7 @@ export default function OurStory() {
           <ol className="relative lg:col-span-6 lg:col-start-7">
             <span className="absolute bottom-4 left-[0.4rem] top-4 w-px bg-plantation/25" aria-hidden="true" />
             {CHAPTERS.map((c, i) => (
-              <li key={c.era} data-reveal={i} className="relative pb-16 pl-12 last:pb-0">
+              <li key={c.era} data-reveal={i} className="relative pb-12 pl-12 last:pb-0">
                 <span className="absolute left-0 top-3 h-[0.85rem] w-[0.85rem] rounded-full border border-plantation bg-parchment" aria-hidden="true">
                   <span className="absolute inset-[3px] rounded-full bg-plantation" />
                 </span>

@@ -62,8 +62,8 @@ const OrderSection = forwardRef<HTMLElement>(function OrderSection(_props, ref) 
   const { count, subtotal, setOpen, add } = useCart()
 
   return (
-    <section ref={ref} id="order" data-chapter="order" data-anchor-vh="0.95" className="relative pb-[16svh]" aria-labelledby="order-title">
-      <div className="mx-auto max-w-[92rem] px-6 pt-[72svh] md:px-10 md:pt-[70svh]">
+    <section ref={ref} id="order" data-chapter="order" data-anchor-vh="0.72" className="relative pb-[10svh]" aria-labelledby="order-title">
+      <div className="mx-auto max-w-[92rem] px-6 pt-[46svh] md:px-10 md:pt-[42svh]">
         <div className="max-w-xl text-center md:text-left">
           <p className="eyebrow flex items-center justify-center gap-4 text-gold md:justify-start">
             <span className="opacity-70">10</span>
@@ -77,7 +77,7 @@ const OrderSection = forwardRef<HTMLElement>(function OrderSection(_props, ref) 
           <p className="text-glow mt-6 text-lg font-light text-cream/85 md:text-xl">Bring the taste of Chikmagalur home.</p>
         </div>
 
-        <div className="mt-[46svh] md:mt-[48svh]">
+        <div className="mt-[26svh] md:mt-[30svh]">
           <ul className="grid gap-4 lg:grid-cols-3">
             {ORDER_PRODUCTS.map((p) => (
               <OrderCard key={p.id} product={p} />

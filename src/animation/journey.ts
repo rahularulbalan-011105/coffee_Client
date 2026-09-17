@@ -217,18 +217,10 @@ export function createJourney({ wrapper, chapters, onProgress }: JourneyOptions)
   tl.seek(current)
   onProgress?.(current)
 
-  // Light extra smoothing on top of Lenis so fast flicks still read as a camera move.
-  const tick = (_t: number, deltaMs: number) => {
-    const d = target - current
-    if (Math.abs(d) < 0.0005) {
-      if (current !== target) {
-        current = target
-        tl.seek(current)
-        onProgress?.(current)
-      }
-      return
-    }
-    current += d * (1 - Math.exp(-(deltaMs / 1000) * 7))
+  // Lenis already smooths the scroll; follow it directly, once per frame.
+  const tick = () => {
+    if (current === target) return
+    current = target
     tl.seek(current)
     onProgress?.(current)
   }

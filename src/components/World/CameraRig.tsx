@@ -69,7 +69,7 @@ export default function CameraRig({ parallax = true }: { parallax?: boolean }) {
     }
 
     const t = clock.elapsedTime
-    const k = damp(5, dt)
+    const k = damp(9, dt)
     smoothPointer.x += (pointer.x - smoothPointer.x) * damp(2, dt)
     smoothPointer.y += (pointer.y - smoothPointer.y) * damp(2, dt)
     const px = parallax ? smoothPointer.x : 0
