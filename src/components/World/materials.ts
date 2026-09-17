@@ -1,4 +1,4 @@
-import { Color, DoubleSide, MeshLambertMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material, type Texture } from 'three'
+import { Color, DoubleSide, MeshDepthMaterial, MeshLambertMaterial, RGBADepthPacking, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material, type Texture } from 'three'
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
 import { dabaraEngraving, tumblerEngraving } from './engraving'
 import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
@@ -256,7 +256,10 @@ function build() {
     roughness: 0.2,
   })
 
-  return { brass, dabaraBrass, tumblerBrass, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
+  // Shadows don't need the engraving texture: share the plain depth shader.
+  const plainDepth = new MeshDepthMaterial({ depthPacking: RGBADepthPacking })
+
+  return { brass, dabaraBrass, tumblerBrass, plainDepth, brassDark, steel, steelInner, perforated, wood, woodKnob, bean, powder, table, foam, leaf, foliage, leafCard, leafCardFar, canopyCard, cherry, bark, enamel, ember }
 }
 
 export function getMaterials() {

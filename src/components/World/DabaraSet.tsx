@@ -26,7 +26,7 @@ export function DabaraVessel({ detail, liquid }: DabaraVesselProps) {
   const geo = useKit('dabara')
   return (
     <group>
-      <mesh geometry={geo} material={m.dabaraBrass} castShadow receiveShadow />
+      <mesh geometry={geo} material={m.dabaraBrass} customDepthMaterial={m.plainDepth} castShadow receiveShadow />
       {liquid && <LiquidSurface initialColor="#3a1d0c" drive={liquid} segments={detail === 'high' ? 56 : 28} />}
     </group>
   )
