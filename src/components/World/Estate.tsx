@@ -42,7 +42,7 @@ export function terrainHeight(x: number, z: number) {
 
 function Terrain({ detail }: { detail: 'high' | 'low' }) {
   const geometry = useMemo(() => {
-    const seg = detail === 'high' ? 140 : 70
+    const seg = detail === 'high' ? 140 : 48
     const g = new PlaneGeometry(1800, 1800, seg, seg)
     g.rotateX(-Math.PI / 2)
     g.translate(0, 0, -500)
@@ -169,8 +169,8 @@ interface Bush {
 function layoutBushes(detail: 'high' | 'low') {
   const r = rng(21)
   const bushes: Bush[] = []
-  const rowStep = detail === 'high' ? 19 : 26
-  const colStep = detail === 'high' ? 12 : 17
+  const rowStep = detail === 'high' ? 19 : 34
+  const colStep = detail === 'high' ? 12 : 22
   for (let z = 34; z > -300; z -= rowStep) {
     const curve = Math.sin(z * 0.02) * 12
     for (let x = -240; x <= 240; x += colStep) {
@@ -179,7 +179,7 @@ function layoutBushes(detail: 'high' | 'low') {
       // Keep the camera's flight path and the hero branch clear.
       if (px > -7 && px < 10 && pz > 11) continue
       if (Math.abs(px - BRANCH.x) < 4 && Math.abs(pz - BRANCH.z) < 5) continue
-      const near = Math.hypot(px - 1, pz - 14) < (detail === 'high' ? 46 : 32)
+      const near = Math.hypot(px - 1, pz - 14) < (detail === 'high' ? 46 : 26)
       const h = 12 + r() * 6
       bushes.push({ x: px, z: pz, y: terrainHeight(px, pz), h, r: 4.2 + r() * 1.6, near })
     }
@@ -216,7 +216,7 @@ function Bushes({ detail }: { detail: 'high' | 'low' }) {
     const blobColors: Color[] = []
     const cores: Matrix4[] = []
     const coreColors: Color[] = []
-    const perBush = detail === 'high' ? 70 : 36
+    const perBush = detail === 'high' ? 70 : 26
     const up = new Vector3(0, 1, 0)
     const dir = new Vector3()
     const tip = new Vector3()
@@ -324,7 +324,7 @@ function ShadeTrees({ detail }: { detail: 'high' | 'low' }) {
     const trunks: Matrix4[] = []
     const crowns: Matrix4[] = []
     const crownColors: Color[] = []
-    const count = detail === 'high' ? 46 : 22
+    const count = detail === 'high' ? 46 : 12
     let placed = 0
     let guard = 0
     while (placed < count && guard++ < 2000) {

@@ -84,7 +84,7 @@ function WarmUp({ onReady, world }: { onReady?: () => void; world: React.RefObje
  */
 export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: CoffeeWorldProps) {
   const [degraded, setDegraded] = useState(false)
-  const declines = useRef(0)
+  const [dpr, setDpr] = useState<number | [number, number]>(quality.dpr)
   const world = useRef<Group>(null)
   const detail = quality.tier
   const postfx = quality.postfx && !degraded
@@ -94,21 +94,29 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
       style={{ position: 'absolute', inset: 0 }}
       frameloop={active ? 'always' : 'never'}
       flat={postfx}
-      dpr={quality.dpr}
-      shadows={{ type: PCFShadowMap }}
+      dpr={dpr}
+      shadows={quality.tier === 'high' ? { type: PCFShadowMap } : false}
       camera={{ fov: 38, near: 0.4, far: 3000, position: [-3, 27, 44] }}
       gl={{ antialias: !postfx, alpha: false, powerPreference: 'high-performance', stencil: false }}
+      onCreated={({ gl }) => {
+        // Only a lost GPU context sends the page to its static fallback.
+        gl.domElement.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault()
+          onGiveUp?.()
+        })
+      }}
       aria-hidden="true"
     >
+      {/* Slow frames only ever lower quality — the story keeps its 3D all the way down. */}
       <PerformanceMonitor
         flipflops={3}
         onDecline={() => {
-          declines.current++
           setDegraded(true)
+          setDpr(1)
         }}
         onFallback={() => {
-          if (quality.tier === 'low' && declines.current > 2) onGiveUp?.()
           setDegraded(true)
+          setDpr(Math.min(1, window.devicePixelRatio * 0.75))
         }}
       >
         <AdaptiveDpr pixelated={false} />
