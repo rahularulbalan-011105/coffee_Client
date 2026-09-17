@@ -193,6 +193,7 @@ export default function Journey({ onReady }: { onReady: () => void }) {
   const railDots = useRef<(HTMLLIElement | null)[]>([])
   const cue = useRef<HTMLDivElement>(null)
   const poster = useRef<HTMLDivElement>(null)
+  const promise = useRef<HTMLDivElement>(null)
   const [webgl] = useState(hasWebGL)
   const [gaveUp, setGaveUp] = useState(false)
   const [inView, setInView] = useState(true)
@@ -238,6 +239,7 @@ export default function Journey({ onReady }: { onReady: () => void }) {
         }
         if (cue.current) cue.current.style.opacity = String(Math.max(0, 1 - pos * 4))
         if (railRef.current) railRef.current.style.opacity = pos > 9.55 ? '0' : '1'
+        if (promise.current) promise.current.style.opacity = pos > 2.4 && pos < 9.3 ? '1' : '0'
       },
     })
     return () => journey.kill()
@@ -261,6 +263,17 @@ export default function Journey({ onReady }: { onReady: () => void }) {
           <JourneyPoster posterRef={poster} />
         )}
         <div className="journey-vignette pointer-events-none absolute inset-0" />
+        <div
+          ref={promise}
+          className="pointer-events-none absolute bottom-8 right-10 hidden items-center gap-4 opacity-0 transition-opacity duration-1000 xl:flex"
+        >
+          {['Estate-grown in Chikmagalur', 'Hand-picked, ripe cherries', 'Small-batch roasted', 'Ground to order'].map((t, i) => (
+            <span key={t} className="eyebrow flex items-center gap-4 text-[0.55rem] text-gold-soft/70">
+              {i > 0 && <span className="text-gold/50">✦</span>}
+              {t}
+            </span>
+          ))}
+        </div>
         <div ref={cue} className="pointer-events-none absolute bottom-9 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 md:flex">
           <span className="eyebrow text-[0.58rem] text-cream/60">Scroll to begin the journey</span>
           <span className="block h-12 w-px overflow-hidden bg-cream/15">

@@ -5,6 +5,7 @@ import { PCFShadowMap, Vector3, type Camera, type Group, type Object3D, type Sce
 import { sceneState } from '../../animation/journey'
 import type { QualitySettings } from '../../hooks/useQuality'
 import Atmosphere from './Atmosphere'
+import Backdrop from './Backdrop'
 import CameraRig, { cameraFocus } from './CameraRig'
 import CoffeeBrew from './CoffeeBrew'
 import DabaraSet from './DabaraSet'
@@ -212,6 +213,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
           <Atmosphere shadowMap={quality.shadowMap} />
 
           <group ref={world}>
+          <Backdrop detail={detail} />
           <Estate detail={detail} />
           <Harvest detail={detail} />
           <DryingBed beans={quality.beans} detail={detail} />
