@@ -20,6 +20,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['From the hills', 'of Chikmagalur'],
       body: 'Where every cup begins.',
       aside: 'Carefully grown. Naturally nurtured. Under silver oaks, at a thousand metres, in the morning mist of the Western Ghats.',
+      facts: [
+        { value: '1,100 m', label: 'Estate altitude' },
+        { value: '2 tiers', label: 'Of shade canopy' },
+        { value: '1670', label: 'Coffee on these hills' },
+      ],
+      note: 'Arabica and robusta grow side by side with pepper vines and cardamom — the estate is a forest first, a farm second.',
     },
   },
   harvest: {
@@ -31,6 +37,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['First,', 'the cherry.'],
       body: 'Selected from the heart of the estate.',
       aside: 'Picked by hand only when crimson-ripe — one cherry, one branch, one pass at a time.',
+      facts: [
+        { value: 'Nov–Feb', label: 'Harvest season' },
+        { value: 'By hand', label: 'Every cherry' },
+        { value: 'Only red', label: 'Ripeness picked' },
+      ],
+      note: 'Pickers return to the same bushes several times a season, taking only the cherries that have turned fully crimson.',
     },
   },
   beans: {
@@ -41,6 +53,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['Every bean', 'has a journey.'],
       body: 'From the estate to the roast.',
       aside: 'Pulped, washed and raked on raised beds until the green beans dry to the colour of straw.',
+      facts: [
+        { value: 'Washed', label: 'Processing' },
+        { value: '7–10 days', label: 'Sun-drying' },
+        { value: '~11%', label: 'Final moisture' },
+      ],
+      note: 'The beans are turned by hand through the day so they dry evenly, then rested before they travel to the roastery.',
     },
   },
   processing: {
@@ -51,6 +69,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['Crafted', 'with patience.'],
       body: 'Every stage shapes the flavour.',
       aside: 'Slow drum-roasted in small batches, then cooled in the open tray to hold the aroma in.',
+      facts: [
+        { value: 'Drum', label: 'Small-batch roast' },
+        { value: '~14 min', label: 'Roast time' },
+        { value: 'Med-dark', label: 'Roast profile' },
+      ],
+      note: 'Each batch is roasted by ear and eye, stopped just after second crack, then cooled fast in the open tray to lock the aroma in.',
     },
   },
   grinding: {
@@ -61,6 +85,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['Ground', 'fresh.'],
       body: 'Unlocking the aroma within every bean.',
       aside: 'Milled for the filter — fine enough to bloom, coarse enough to drip clean.',
+      facts: [
+        { value: 'Fine', label: 'Filter grind' },
+        { value: '80 : 20', label: 'Coffee to chicory' },
+        { value: 'To order', label: 'Freshly ground' },
+      ],
+      note: 'Chicory is blended in for the classic body and the deep, slightly caramel bitterness South Indian homes know.',
     },
   },
   filtering: {
@@ -71,6 +101,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['Time becomes', 'flavour.'],
       body: 'Slow extraction. Deep character.',
       aside: 'Pressed into the upper chamber and left beneath near-boiling water, drop by patient drop.',
+      facts: [
+        { value: '3 tbsp', label: 'Powder per brew' },
+        { value: '~95 °C', label: 'Water' },
+        { value: '15–20 min', label: 'Slow drip' },
+      ],
+      note: 'The powder is pressed with the umbrella disc so the water seeps through evenly instead of rushing past the grounds.',
     },
   },
   brewing: {
@@ -81,6 +117,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['The heart', 'of the cup.'],
       body: 'Rich. Smooth. Unmistakably South Indian.',
       aside: 'A thick, dark decoction, fragrant enough to wake the whole house.',
+      facts: [
+        { value: 'Thick', label: 'First decoction' },
+        { value: '1 : 3', label: 'Decoction to milk' },
+        { value: 'Whole', label: 'Full-cream milk' },
+      ],
+      note: 'The first, strongest drops are the prize — many families keep them for the morning’s first cup.',
     },
   },
   dabara: {
@@ -91,6 +133,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['A ritual', 'worth savouring.'],
       body: 'Served the South Indian way.',
       aside: 'Decoction meets frothed, full-cream milk in a hand-beaten brass dabara.',
+      facts: [
+        { value: 'Brass', label: 'Hand-beaten' },
+        { value: 'Tin-lined', label: 'Food-safe' },
+        { value: 'Two', label: 'Vessels, one ritual' },
+      ],
+      note: 'The wide dabara cools the coffee quickly and gives it room to be poured back and forth.',
     },
   },
   pouring: {
@@ -101,6 +149,12 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
       title: ['Pulled', 'from a height.'],
       body: 'Back and forth, until it wears a crown of foam.',
       aside: 'The long pour cools the coffee to just-right and folds air into every sip.',
+      facts: [
+        { value: 'High', label: 'Arm’s-length pour' },
+        { value: '3–4', label: 'Pulls to froth' },
+        { value: 'நுரை', label: 'Nurai — the crown' },
+      ],
+      note: 'The higher the pull, the finer the froth — and the more theatre at the table.',
     },
   },
 }

@@ -7,6 +7,10 @@ export interface ChapterCopy {
   title: [string, string]
   body: string
   aside: string
+  /** Three quick facts shown under the copy. */
+  facts?: { value: string; label: string }[]
+  /** A short practice note (the "how we do it" line). */
+  note?: string
 }
 
 interface ChapterProps {
@@ -72,7 +76,25 @@ const Chapter = forwardRef<HTMLElement, ChapterProps>(function Chapter({ id, cop
               <span className={`block normal-case italic ${tone === 'mist' ? 'text-cream' : 'text-gold-soft'}`}>{copy.title[1]}</span>
             </h2>
             <p className="text-glow mt-6 text-lg font-light text-cream/90 md:text-xl">{copy.body}</p>
-            <p className="text-glow mx-auto mt-3 max-w-sm text-sm font-light leading-relaxed text-cream/60 md:mx-0">{copy.aside}</p>
+            <p className="text-glow mx-auto mt-3 hidden max-w-md text-sm font-light leading-relaxed text-cream/65 sm:block md:mx-0">{copy.aside}</p>
+            {copy.facts && (
+              <dl className="mx-auto mt-6 grid max-w-md grid-cols-3 divide-x divide-cream/15 border-y border-cream/15 py-3 md:mx-0 md:mt-8 md:py-4">
+                {copy.facts.map((f) => (
+                  <div key={f.label} className="flex flex-col-reverse px-2 first:pl-0 md:px-4">
+                    <dt className="eyebrow mt-2 min-h-[2.6em] text-[0.52rem] leading-snug text-cream/60 md:text-[0.56rem]">{f.label}</dt>
+                    <dd className={`display text-glow whitespace-nowrap text-[1.45rem] leading-none md:text-[1.9rem] ${tone === 'mist' ? 'text-cream' : 'text-gold-soft'}`}>
+                      {f.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {copy.note && (
+              <p className="text-glow mx-auto mt-4 hidden max-w-md items-start gap-3 text-left text-[0.8rem] font-light leading-relaxed text-cream/70 md:mx-0 md:flex">
+                <span className="mt-[0.55em] h-px w-6 shrink-0 bg-gold/60" aria-hidden="true" />
+                <span>{copy.note}</span>
+              </p>
+            )}
             {children}
           </div>
         </div>
