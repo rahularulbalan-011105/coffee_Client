@@ -44,7 +44,9 @@ const FINAL = new Vector3().copy(DABARA_FINAL).add(LIP)
 const TILT_MAX = 1.42
 
 const mixed = new Color()
-const dir = new Vector3()
+const mouthDir = new Vector3()
+/** Where coffee leaves the dabara: inside the opening, near its lowest edge (relative to LIP). */
+const MOUTH = new Vector3(DABARA.radius * 0.72 - LIP.x, DABARA.height - LIP.y, 0)
 
 function dabaraAmount() {
   const s = sceneState
@@ -123,18 +125,24 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
   }
 
   const tumblerFill = () => sub(sceneState.pour, 0.3, 0.86)
-  const tumblerFoam = () => Math.min(1, sub(sceneState.pour, 0.55, 1) * 0.65 + sceneState.finale * 0.35)
+  // Froth builds as the long pour finishes, then settles into a full crown for the hero shot.
+  const tumblerFoam = () => Math.min(1, smooth(sub(sceneState.pour, 0.55, 0.92)) * 0.8 + sceneState.finale * 0.2)
 
   const pourStream = (st: StreamState) => {
     const pv = pivot.current
     if (!pv) return
     const p = sceneState.pour
-    dir.set(Math.cos(pv.rotation.z), Math.sin(pv.rotation.z), 0)
-    st.p0.copy(pv.position).addScaledVector(dir, 0.006)
-    st.p1.copy(st.p0).add(dir.set(0.05, 0.0, 0))
+    // Start inside the mouth of the tilted dabara and leave along the opening's facing
+    // direction, so the coffee visibly pours out of the hole rather than off the rim.
+    const a = pv.rotation.z
+    const cs = Math.cos(a)
+    const sn = Math.sin(a)
+    st.p0.set(pv.position.x + MOUTH.x * cs - MOUTH.y * sn, pv.position.y + MOUTH.x * sn + MOUTH.y * cs, pv.position.z)
+    mouthDir.set(-sn, cs, 0)
+    st.p1.copy(st.p0).addScaledVector(mouthDir, 0.11)
     const t = STATIONS.tumbler
     const surface = t.y + tumblerLevelY(tumblerFill())
-    st.p2.set(t.x - 0.01, lerp(st.p0.y, surface, 0.45), t.z)
+    st.p2.set(t.x - 0.005, lerp(st.p1.y, surface, 0.5), t.z)
     st.p3.set(t.x, surface, t.z)
     st.head = smooth(sub(p, 0.3, 0.36))
     st.tail = smooth(sub(p, 0.8, 0.86))
