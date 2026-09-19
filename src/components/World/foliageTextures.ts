@@ -19,12 +19,12 @@ interface LeafSpec {
 }
 
 const LEAF_GREENS: [string, string][] = [
-  ['#1f3d1c', '#3d6a2f'],
-  ['#2a4f22', '#4f8338'],
-  ['#335e27', '#5f9540'],
-  ['#284a24', '#4a7d36'],
-  ['#3f6b2a', '#79a84a'],
-  ['#1c3519', '#355d2a'],
+  ['#3f6e2e', '#72a64c'],
+  ['#4a7f34', '#86ba5a'],
+  ['#548845', '#90bd72'],
+  ['#467a32', '#7fb356'],
+  ['#5c8f43', '#9cc47a'],
+  ['#3a6a2d', '#6a9e48'],
 ]
 
 /** Coffee-leaf outline along +x from base (0,0) to tip (len,0): broad blade, drip tip. */

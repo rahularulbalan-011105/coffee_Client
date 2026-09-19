@@ -308,7 +308,7 @@ export function createLiquidMaterial(color: string) {
 }
 
 export const PLANT_COLORS = {
-  leaves: ['#1f4a2a', '#24562f', '#2f6436', '#1a3f25', '#3a6d3b', '#28502c'],
+  leaves: ['#3f7a3e', '#4a8a46', '#57984f', '#3a723a', '#62a256', '#468240'],
   cherryUnripe: new Color('#5f8a34'),
   cherryTurning: new Color('#c98a2a'),
   cherryRipe: new Color('#a3141a'),

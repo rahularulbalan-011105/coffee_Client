@@ -41,8 +41,8 @@ interface Mood {
 }
 
 const MOODS: Mood[] = [
-  { at: 0, bg: '#2b2a27', fog: '#6f6c66', density: 0.0034, sky: 1, skyTop: '#1f2327', skyHorizon: '#8c7d6c', hemiSky: '#8b95a0', hemiGround: '#1a2418', hemi: 0.8, sun: 3.6, sunColor: '#ffbe70', sunDir: [0.14, 0.075, -1], key: 0, keyColor: '#ffe0b8', env: 0.3 },
-  { at: 1.5, bg: '#2b2a27', fog: '#67655e', density: 0.006, sky: 1, skyTop: '#1f2327', skyHorizon: '#857868', hemiSky: '#9aa3a8', hemiGround: '#1c2819', hemi: 1.0, sun: 3.4, sunColor: '#ffb869', sunDir: [0.14, 0.12, -1], key: 0, keyColor: '#ffe0b8', env: 0.4 },
+  { at: 0, bg: '#b4bab3', fog: '#b1b8ae', density: 0.0034, sky: 1, skyTop: '#7c858a', skyHorizon: '#c9cec7', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.55, sun: 1.5, sunColor: '#f4f2ea', sunDir: [0.25, 0.7, -1], key: 0, keyColor: '#ffe0b8', env: 0.35 },
+  { at: 1.5, bg: '#aeb5ad', fog: '#a9b1a6', density: 0.006, sky: 1, skyTop: '#7c858a', skyHorizon: '#c3c9c1', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.6, sun: 1.6, sunColor: '#f4f2ea', sunDir: [0.25, 0.8, -0.8], key: 0, keyColor: '#ffe0b8', env: 0.4 },
   { at: 2.1, bg: '#6f7563', fog: '#8f957f', density: 0.08, sky: 0.3, skyTop: '#55604f', skyHorizon: '#a9ad96', hemiSky: '#dfe0cb', hemiGround: '#2a2a1c', hemi: 0.8, sun: 2.2, sunColor: '#ffe3b5', sunDir: [-0.6, 0.8, -0.2], key: 10, keyColor: '#ffe0b8', env: 0.5 },
   { at: 2.55, bg: '#1d1a12', fog: '#221f16', density: 0.05, sky: 0, skyTop: '#1d1a12', skyHorizon: '#1d1a12', hemiSky: '#e0d7ba', hemiGround: '#1d170f', hemi: 0.55, sun: 1.8, sunColor: '#ffe7c4', sunDir: [-0.6, 1, 0.4], key: 34, keyColor: '#ffe0b8', env: 0.6 },
   { at: 3.5, bg: '#140e0a', fog: '#140e0a', density: 0.08, sky: 0, skyTop: '#140e0a', skyHorizon: '#140e0a', hemiSky: '#ffdcb5', hemiGround: '#140a05', hemi: 0.34, sun: 0.35, sunColor: '#ffd2a0', sunDir: [-0.6, 1, 0.4], key: 60, keyColor: '#ffc38a', env: 0.75 },
@@ -133,27 +133,22 @@ const skyFragment = /* glsl */ `
     vec3 d = normalize(vDir);
     float s = max(dot(d, uSun), 0.0);
     vec3 col = mix(uHorizon, uTop, pow(clamp(d.y * 2.2 + 0.04, 0.0, 1.0), 0.55));
-    // Warm glow low around the sun.
-    col += uSunColor * pow(s, 5.0) * 0.6 * (1.0 - clamp(d.y * 2.0, 0.0, 1.0));
+    // Overcast: a soft, bright patch where the sun hides behind the cloud deck.
+    col += uSunColor * pow(s, 4.0) * 0.12;
 
-    // Storm clouds: a domain-warped layer projected onto a sky plane.
+    // Layered grey monsoon cloud, drifting slowly.
     vec2 uv = d.xz / (max(d.y, 0.0) + 0.16) * 0.9;
     uv.x += uTime * 0.006;
-    float warp = fbm(uv * 0.55 + 3.1);
-    float n = fbm(uv * 1.05 + warp * 1.1);
-    float cover = smoothstep(0.38, 0.72, n) * smoothstep(-0.03, 0.1, d.y);
-    float thick = smoothstep(0.5, 0.95, n);
-    vec3 cloudDark = vec3(0.09, 0.095, 0.11);
-    vec3 cloudLit = mix(vec3(0.33, 0.32, 0.33), uSunColor * 1.15, pow(s, 3.0));
-    vec3 cloud = mix(cloudLit, cloudDark, thick * (1.0 - pow(s, 6.0) * 0.75));
-    // Silver linings where thin cloud edges face the sun.
-    cloud += uSunColor * cover * (1.0 - thick) * pow(s, 3.5) * 1.4;
-    // The sun burns a hole through the cloud deck.
-    cover *= 1.0 - pow(s, 25.0) * 0.9;
-    col = mix(col, cloud, cover);
-
-    // Sun disk and bloom.
-    col += uSunColor * (pow(s, 1400.0) * 8.0 + pow(s, 90.0) * 1.3 + pow(s, 14.0) * 0.25);
+    float warp = fbm(uv * 0.5 + 3.1);
+    float n = fbm(uv * 0.9 + warp * 1.2);
+    float cover = smoothstep(0.25, 0.65, n) * smoothstep(-0.05, 0.12, d.y);
+    float thick = smoothstep(0.45, 0.9, n);
+    vec3 cloudLight = vec3(0.78, 0.8, 0.8);
+    vec3 cloudGrey = vec3(0.46, 0.49, 0.51);
+    vec3 cloud = mix(cloudLight, cloudGrey, thick);
+    // Brighter undersides nearer the hidden sun.
+    cloud += uSunColor * pow(s, 3.0) * (1.0 - thick) * 0.08;
+    col = mix(col, cloud, cover * 0.9);
     gl_FragColor = vec4(col, uOpacity);
     #include <colorspace_fragment>
   }

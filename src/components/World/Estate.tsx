@@ -1,11 +1,9 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
-  AdditiveBlending,
   BufferAttribute,
   Color,
   CylinderGeometry,
-  DoubleSide,
   Euler,
   InstancedMesh,
   Matrix4,
@@ -22,7 +20,6 @@ import { sceneState } from '../../animation/journey'
 import { applyFoliageNoise, getMaterials } from './materials'
 import { BRANCH, ESTATE_SUN } from './layout'
 import { rng, sub } from './math'
-import { Rain } from './Effects3D'
 
 /**
  * Chikmagalur at the edge of a monsoon evening: terraced rows falling into a misty valley,
@@ -62,8 +59,8 @@ const HAZE_GLSL = /* glsl */ `
 
 const sunUniforms = () => ({
   uSun: { value: ESTATE_SUN.clone() },
-  uSunColor: { value: new Color('#ffb46a') },
-  uHaze: { value: new Color('#7c7a74') },
+  uSunColor: { value: new Color('#e6e8e3') },
+  uHaze: { value: new Color('#b2b9af') },
 })
 
 /* ---------------------------------------------------------------- terrain */
@@ -76,10 +73,10 @@ function Terrain({ detail }: { detail: Detail }) {
     g.translate(0, 0, -560)
     const pos = g.attributes.position
     const colors = new Float32Array(pos.count * 3)
-    const soil = new Color('#2a2718')
-    const green = new Color('#1f3a20')
-    const lush = new Color('#355f2c')
-    const forest = new Color('#14261a')
+    const soil = new Color('#4e4a2c')
+    const green = new Color('#4a7a38')
+    const lush = new Color('#78a852')
+    const forest = new Color('#35573a')
     const c = new Color()
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
@@ -139,10 +136,10 @@ function Mountains() {
   const layers = useMemo(() => {
     const r = rng(4)
     const specs = [
-      { z: -390, base: 20, top: 120, haze: 0.22, body: '#1b261d', treeline: 1 },
-      { z: -560, base: 40, top: 190, haze: 0.42, body: '#26322a', treeline: 0.6 },
-      { z: -780, base: 60, top: 270, haze: 0.62, body: '#39423e', treeline: 0.3 },
-      { z: -1080, base: 80, top: 340, haze: 0.8, body: '#5b5b58', treeline: 0 },
+      { z: -390, base: 20, top: 120, haze: 0.3, body: '#3f6a3c', treeline: 1 },
+      { z: -560, base: 40, top: 190, haze: 0.5, body: '#557a53', treeline: 0.6 },
+      { z: -780, base: 60, top: 270, haze: 0.68, body: '#6f8a70', treeline: 0.3 },
+      { z: -1080, base: 80, top: 340, haze: 0.84, body: '#8f9d92', treeline: 0 },
     ]
     return specs.map((spec, li) => {
       const seg = 360
@@ -221,7 +218,7 @@ function Instances({
 }
 
 const up = new Vector3(0, 1, 0)
-const HEDGE_GREENS = ['#2e5a28', '#3a6a2f', '#27502a', '#44743a', '#335f2c', '#2a4f25']
+const HEDGE_GREENS = ['#5a8c4a', '#659852', '#528446', '#6fa05a', '#5e904d', '#568846']
 
 
 /* ------------------------------------------------------------ foliage cards */
@@ -299,7 +296,7 @@ function Terraces({ detail }: { detail: Detail }) {
         // Level of detail: many small sprigs up close, a few big ones far away.
         const n = dist < 40 ? (detail === 'high' ? 70 : 34) : dist < 90 ? (detail === 'high' ? 26 : 14) : detail === 'high' ? 12 : 7
         const size = (dist < 40 ? 3.2 : dist < 90 ? 4.6 : 6.2) * s
-        const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(2.1)
+        const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(1.95)
         if (dist < 40) addBush(cards, cardCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
         else addBush(farCards, farCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
       }
@@ -308,7 +305,7 @@ function Terraces({ detail }: { detail: Detail }) {
     // The hero bush the harvest branch belongs to.
     const hx = BRANCH.x + 3.5
     const hz = BRANCH.z - 8.5
-    addBush(cards, cardCols, r, hx, terrainHeight(BRANCH.x, BRANCH.z) + 8.5, hz, 5.5, 8, detail === 'high' ? 85 : 45, 3.0, new Color('#3a6a2f').multiplyScalar(2))
+    addBush(cards, cardCols, r, hx, terrainHeight(BRANCH.x, BRANCH.z) + 8.5, hz, 5.5, 8, detail === 'high' ? 85 : 45, 3.0, new Color('#5a9444').multiplyScalar(2))
     return { cards, cardCols, farCards, farCols }
   }, [detail])
 
@@ -338,7 +335,7 @@ function Forest({ detail }: { detail: Detail }) {
     const cards: Matrix4[] = []
     const cardCols: Color[] = []
     const trunks: Matrix4[] = []
-    const darkGreens = ['#1d3822', '#26452a', '#18301b', '#2c4c2e']
+    const darkGreens = ['#35603a', '#40703f', '#2f5733', '#4a7a4a']
 
     // Forest canopy across the valley and the far hills: clumps of sprig cards.
     const clumps = detail === 'high' ? 300 : 150
@@ -498,77 +495,6 @@ function MistLayers({ detail }: { detail: Detail }) {
   )
 }
 
-/* ----------------------------------------------------------------- sun rays */
-
-const rayFragment = /* glsl */ `
-  uniform float uTime; uniform float uOpacity; uniform vec3 uColor; uniform float uSeed;
-  varying vec2 vUv;
-  void main() {
-    float across = smoothstep(0.0, 0.5, vUv.x) * smoothstep(1.0, 0.5, vUv.x);
-    float along = smoothstep(0.0, 0.2, vUv.y) * smoothstep(1.0, 0.75, vUv.y);
-    float flicker = 0.7 + 0.3 * sin(uTime * 0.25 + uSeed * 4.0);
-    gl_FragColor = vec4(uColor * across * along * flicker * uOpacity, 1.0);
-  }
-`
-
-const RAY_ORIGIN = new Vector3(-2, 26, 44).addScaledVector(ESTATE_SUN, 380)
-
-function SunRays() {
-  const rays = useMemo(() => {
-    const r = rng(3)
-    return Array.from({ length: 9 }, (_, i) => ({
-      angle: -1.25 + (i / 8) * 2.5 + (r() - 0.5) * 0.15,
-      width: 10 + r() * 22,
-      material: new ShaderMaterial({
-        vertexShader: simpleVertex,
-        fragmentShader: rayFragment,
-        transparent: true,
-        depthWrite: false,
-        blending: AdditiveBlending,
-        side: DoubleSide,
-        uniforms: {
-          uTime: { value: 0 },
-          uOpacity: { value: 0.035 + r() * 0.04 },
-          uColor: { value: new Color('#ffcf8f') },
-          uSeed: { value: r() * 10 },
-        },
-      }),
-    }))
-  }, [])
-  const geometry = useMemo(() => {
-    const g = new PlaneGeometry(1, 1)
-    g.translate(0, -0.5, 0)
-    return g
-  }, [])
-
-  useFrame(({ clock }) => {
-    for (const ray of rays) ray.material.uniforms.uTime.value = clock.elapsedTime
-  })
-
-  // A fan of light radiating down from the sun towards the viewer.
-  return (
-    <group position={RAY_ORIGIN}>
-      {rays.map((ray, i) => (
-        <mesh
-          key={i}
-          geometry={geometry}
-          material={ray.material}
-          rotation={[0.35, 0, ray.angle]}
-          scale={[ray.width, 340, 1]}
-          renderOrder={20}
-          frustumCulled={false}
-        />
-      ))}
-    </group>
-  )
-}
-
-/* ----------------------------------------------------- foreground wet leaves */
-
-/**
- * Large, crisp sprigs framing the bottom of the opening shot (and a few hanging in from the
- * top-left), like the wet coffee leaves in front of the lens. They part as the camera moves in.
- */
 function ForegroundFoliage({ detail }: { detail: Detail }) {
   const m = getMaterials()
   const cardGeo = useMemo(() => new PlaneGeometry(1, 1), [])
@@ -582,7 +508,7 @@ function ForegroundFoliage({ detail }: { detail: Detail }) {
     const high: Matrix4[] = []
     const highCols: Color[] = []
     const count = detail === 'high' ? 34 : 18
-    const tint = new Color('#6b9c4a')
+    const tint = new Color('#86b85c')
     for (let i = 0; i < count; i++) {
       const x = -26 + (i / count) * 52 + (r() - 0.5) * 3
       const z = 34 + r() * 3.5
@@ -630,7 +556,6 @@ function ForegroundFoliage({ detail }: { detail: Detail }) {
 
 export default function Estate({ detail }: { detail: Detail }) {
   const group = useRef<Group>(null)
-  const rainCentre = useMemo(() => new Vector3(), [])
 
   useFrame(() => {
     if (group.current) group.current.visible = sceneState.pos < 2.3
@@ -644,17 +569,7 @@ export default function Estate({ detail }: { detail: Detail }) {
       <Forest detail={detail} />
       <Waterfall />
       <MistLayers detail={detail} />
-      <SunRays />
       <ForegroundFoliage detail={detail} />
-      <Rain
-        count={detail === 'high' ? 900 : 350}
-        center={() => {
-          // Rain falls around the camera, slightly ahead of it.
-          rainCentre.set(sceneState.cam.px, sceneState.cam.py - 4, sceneState.cam.pz - 14)
-          return rainCentre
-        }}
-        opacity={() => 1 - sub(sceneState.pos, 1.3, 2.1)}
-      />
     </group>
   )
 }

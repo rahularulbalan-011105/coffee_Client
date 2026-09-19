@@ -159,13 +159,15 @@
   .journey-vignette {
     background:
       radial-gradient(120% 95% at 62% 48%, transparent 42%, rgb(var(--tint) / 0.5) 76%, rgb(var(--tint) / 0.92) 100%),
-      linear-gradient(90deg, rgb(var(--tint) / 0.78) 0%, rgb(var(--tint) / 0.35) 32%, transparent 56%);
+      linear-gradient(90deg, rgb(var(--tint) / 0.78) 0%, rgb(var(--tint) / 0.35) 32%, transparent 56%),
+      linear-gradient(180deg, rgb(11 7 5 / 0.4) 0%, transparent 16%);
   }
   @media (max-width: 767px) {
     .journey-vignette {
       background:
         radial-gradient(130% 80% at 50% 34%, transparent 40%, rgb(var(--tint) / 0.55) 80%, rgb(var(--tint) / 0.92) 100%),
-        linear-gradient(0deg, rgb(var(--tint) / 0.95) 0%, rgb(var(--tint) / 0.6) 32%, transparent 55%);
+        linear-gradient(0deg, rgb(var(--tint) / 0.95) 0%, rgb(var(--tint) / 0.6) 32%, transparent 55%),
+        linear-gradient(180deg, rgb(11 7 5 / 0.45) 0%, transparent 14%);
     }
   }
 
