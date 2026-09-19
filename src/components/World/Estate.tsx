@@ -2,15 +2,17 @@ import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   BufferAttribute,
+  CatmullRomCurve3,
   Color,
   CylinderGeometry,
-  Euler,
   InstancedMesh,
   Matrix4,
   MeshStandardMaterial,
   PlaneGeometry,
   Quaternion,
   ShaderMaterial,
+  SphereGeometry,
+  TubeGeometry,
   Vector3,
   type BufferGeometry,
   type Group,
@@ -19,11 +21,13 @@ import {
 import { sceneState } from '../../animation/journey'
 import { applyFoliageNoise, getMaterials } from './materials'
 import { BRANCH, ESTATE_SUN } from './layout'
-import { rng, sub } from './math'
+import { rng } from './math'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 /**
- * Chikmagalur at the edge of a monsoon evening: terraced rows falling into a misty valley,
- * forested hills and tall silver oaks, ridges fading into a warm, rain-soaked sunset.
+ * Chikmagalur on a misty, overcast morning: coffee planted in hedgerows along the contours of
+ * the slope, the same rows striping the far hillsides, forest on the crests and tall silver
+ * oaks standing over the estate, ridges fading into grey cloud.
  */
 
 type Detail = 'high' | 'low'
@@ -44,6 +48,18 @@ export function terrainHeight(x: number, z: number) {
   const nearFlat = smoothstep(8, 40, Math.hypot(x - BRANCH.x, z - BRANCH.z))
   return (valley + lateral + leftHill + farHills + rolling) * nearFlat
 }
+
+/** Where the far hillsides are planted (1) rather than left to forest (0). */
+export function plantedMask(x: number, z: number) {
+  const n = Math.sin(x * 0.017 + 1.3) * 0.6 + Math.sin(z * 0.013 + 0.4) * 0.6 + Math.sin((x + z) * 0.009) * 0.4
+  return smoothstep(-0.1, 0.3, n)
+}
+const PLANTED_GLSL = /* glsl */ `
+  float plantedMask(vec2 p) {
+    float n = sin(p.x * 0.017 + 1.3) * 0.6 + sin(p.y * 0.013 + 0.4) * 0.6 + sin((p.x + p.y) * 0.009) * 0.4;
+    return smoothstep(-0.1, 0.3, n);
+  }
+`
 
 /* --------------------------------------------------------------- shared shader bits */
 
@@ -73,21 +89,25 @@ function Terrain({ detail }: { detail: Detail }) {
     g.translate(0, 0, -560)
     const pos = g.attributes.position
     const colors = new Float32Array(pos.count * 3)
-    const soil = new Color('#4e4a2c')
-    const green = new Color('#4a7a38')
-    const lush = new Color('#78a852')
+    const soil = new Color('#8a7650')
+    const grass = new Color('#8fa86a')
     const forest = new Color('#35573a')
+    const slopes = new Float32Array(pos.count)
     const c = new Color()
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i)
       const z = pos.getZ(i)
-      pos.setY(i, terrainHeight(x, z))
+      const y = terrainHeight(x, z)
+      pos.setY(i, y)
       const away = Math.max(0, -z)
-      const row = 0.5 + 0.5 * Math.sin(z * 0.48 + Math.sin(x * 0.02) * 2)
-      c.copy(green).lerp(lush, row * 0.7).lerp(soil, (1 - row) * 0.2)
-      c.lerp(forest, smoothstep(110, 200, away))
+      // Paths between the rows: grass worn to soil in places.
+      const worn = 0.5 + 0.5 * Math.sin(x * 0.13 + z * 0.07) * Math.sin(z * 0.21 - x * 0.05)
+      c.copy(grass).lerp(soil, worn * 0.45)
+      c.lerp(forest, smoothstep(110, 200, away) * (1 - plantedMask(x, z)))
       colors.set([c.r, c.g, c.b], i * 3)
+      slopes[i] = Math.hypot(terrainHeight(x + 2, z) - y, terrainHeight(x, z + 2) - y) / 2
     }
+    g.setAttribute('aSlope', new BufferAttribute(slopes, 1))
     g.setAttribute('color', new BufferAttribute(colors, 3))
     g.computeVertexNormals()
     return g
@@ -95,6 +115,32 @@ function Terrain({ detail }: { detail: Detail }) {
   const material = useMemo(() => {
     const m = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 })
     applyFoliageNoise(m, 0.6)
+    // On the far slopes the coffee is too small to model: paint its hedgerows as contour
+    // stripes (rows follow constant height, so they bend with every fold of the hill).
+    const foliage = m.onBeforeCompile
+    m.onBeforeCompile = (shader, renderer) => {
+      foliage(shader, renderer)
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aSlope;\nvarying float vSlope;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvSlope = aSlope;')
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>\nvarying float vSlope;\n${PLANTED_GLSL}`)
+        .replace(
+          'diffuseColor.rgb *= 0.5 + folN * 0.9;',
+          `float away = max(0.0, -vFolPos.z);
+          float planted = smoothstep(95.0, 140.0, away) * plantedMask(vFolPos.xz) * smoothstep(0.08, 0.2, vSlope);
+          float period = 2.2 * (1.0 + away / 260.0);
+          float rowC = vFolPos.y / period + folNoise(vFolPos * 0.04) * 0.35;
+          float row = fract(rowC);
+          float hedge = smoothstep(0.2, 0.32, row) * smoothstep(0.86, 0.74, row);
+          // Too fine to resolve far away: settle to the average instead of shimmering.
+          hedge = mix(hedge, 0.55, clamp(fwidth(rowC) * 1.5, 0.0, 1.0));
+          vec3 rows = mix(vec3(0.42, 0.40, 0.27), vec3(0.24, 0.40, 0.2), hedge);
+          diffuseColor.rgb = mix(diffuseColor.rgb, rows, planted);
+          diffuseColor.rgb *= 0.5 + folN * 0.9;`,
+        )
+    }
+    m.customProgramCacheKey = () => 'estate-terrain-rows'
     return m
   }, [])
   return <mesh geometry={geometry} material={material} receiveShadow />
@@ -218,7 +264,7 @@ function Instances({
 }
 
 const up = new Vector3(0, 1, 0)
-const HEDGE_GREENS = ['#5a8c4a', '#659852', '#528446', '#6fa05a', '#5e904d', '#568846']
+const HEDGE_GREENS = ['#4a7c3c', '#558844', '#447238', '#5e924b', '#4f8240', '#48793a']
 
 
 /* ------------------------------------------------------------ foliage cards */
@@ -269,9 +315,19 @@ function addBush(
 
 /* ------------------------------------------------------------ terraced rows */
 
+/**
+ * Coffee hedgerows along the slope. Each row is a solid rounded hedge (so there are no
+ * see-through gaps) clad in leaf sprigs turned outwards from the row, with a slight swell
+ * at every plant. Paths of grass and soil run between the rows.
+ */
 function Terraces({ detail }: { detail: Detail }) {
   const m = getMaterials()
   const cardGeo = useMemo(() => new PlaneGeometry(1, 1), [])
+  const coreMaterial = useMemo(() => {
+    const c = new MeshStandardMaterial({ color: new Color('#34592a'), roughness: 0.9, metalness: 0 })
+    applyFoliageNoise(c, 0.9)
+    return c
+  }, [])
 
   const data = useMemo(() => {
     const r = rng(21)
@@ -279,38 +335,86 @@ function Terraces({ detail }: { detail: Detail }) {
     const cardCols: Color[] = []
     const farCards: Matrix4[] = []
     const farCols: Color[] = []
-    const rowStep = detail === 'high' ? 12 : 16
-    const along = detail === 'high' ? 6.5 : 8.5
+    const cores: BufferGeometry[] = []
+    const rowStep = detail === 'high' ? 15 : 18
+    const radius = 3.1
+    // Hedge centre above the ground: about five units of bush stand above the path.
+    const lift = 0.9
+    const dir = new Vector3()
+    const tangent = new Vector3()
+    const side = new Vector3()
 
-    for (let z = 40; z > -150; z -= rowStep) {
-      const halfWidth = 34 + Math.max(0, 44 - z) * 0.95
-      for (let x = -halfWidth; x <= halfWidth; x += along * (1 + Math.max(0, -z) / 160)) {
-        // Rows follow the contour of the slope.
-        const pz = z + Math.sin(x * 0.02 + z * 0.1) * 4 + (r() - 0.5) * 1.2
-        const px = x + (r() - 0.5) * 1.5
-        if (px > -10 && px < 12 && pz > 6) continue // camera flight path
-        if (Math.hypot(px - BRANCH.x, pz - BRANCH.z) < 9) continue
-        const gy = terrainHeight(px, pz)
-        const s = 1 + Math.max(0, -pz) / 200
-        const dist = Math.hypot(px + 2, pz - 44)
-        // Level of detail: many small sprigs up close, a few big ones far away.
-        const n = dist < 40 ? (detail === 'high' ? 70 : 34) : dist < 90 ? (detail === 'high' ? 26 : 14) : detail === 'high' ? 12 : 7
-        const size = (dist < 40 ? 3.2 : dist < 90 ? 4.6 : 6.2) * s
-        const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(1.95)
-        if (dist < 40) addBush(cards, cardCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
-        else addBush(farCards, farCols, r, px, gy + 4 * s, pz, along * 0.62 * s, 3.8 * s, n, size, tint)
+    const blocked = (x: number, z: number) => (x > -11 && x < 13 && z > 4) || Math.hypot(x - BRANCH.x, z - BRANCH.z) < 12
+
+    for (let z0 = 42; z0 > -120; z0 -= rowStep) {
+      const halfWidth = 40 + Math.max(0, 44 - z0)
+      // Follow the lie of the land: a gentle, row-specific curve.
+      const bend = (x: number) => Math.sin(x * 0.018 + z0 * 0.1) * 4.5 + Math.sin(x * 0.047 + z0) * 1.2
+      let run: Vector3[] = []
+      const flush = () => {
+        if (run.length >= 4) {
+          const curve = new CatmullRomCurve3(run)
+          const len = curve.getLength()
+          cores.push(new TubeGeometry(curve, Math.max(4, Math.round(len / 2.5)), radius, 8, false))
+          // Leaf sprigs over the upper surface of the hedge.
+          const mid = run[Math.floor(run.length / 2)]
+          const near = Math.hypot(mid.x + 2, mid.z - 44) < 70
+          const density = near ? (detail === 'high' ? 7.5 : 3.8) : detail === 'high' ? 2.4 : 1.2
+          const count = Math.round(len * density)
+          for (let i = 0; i < count; i++) {
+            const t = r()
+            const p = curve.getPointAt(t)
+            curve.getTangentAt(t, tangent)
+            side.crossVectors(tangent, up).normalize()
+            // Upper half of the hedge only (the rest is in the ground or in shade).
+            const a = (r() - 0.5) * Math.PI * 1.05
+            const plant = 0.92 + 0.12 * Math.sin(t * len * 0.9)
+            dir.copy(up).multiplyScalar(Math.cos(a)).addScaledVector(side, Math.sin(a)).addScaledVector(tangent, (r() - 0.5) * 0.4).normalize()
+            const pos = p.clone().addScaledVector(dir, radius * (0.85 + r() * 0.25) * plant)
+            cardBasisZ.copy(dir).add(new Vector3((r() - 0.5) * 0.5, (r() - 0.5) * 0.3, (r() - 0.5) * 0.5)).normalize()
+            cardBasisX.crossVectors(up, cardBasisZ)
+            if (cardBasisX.lengthSq() < 1e-4) cardBasisX.copy(tangent)
+            cardBasisX.normalize()
+            cardBasisY.crossVectors(cardBasisZ, cardBasisX)
+            cardRot.makeBasis(cardBasisX, cardBasisY, cardBasisZ)
+            const q = new Quaternion().setFromRotationMatrix(cardRot).premultiply(new Quaternion().setFromAxisAngle(cardBasisZ, (r() - 0.5) * 1.2))
+            const sz = (near ? 3.3 : 5) * (0.8 + r() * 0.4)
+            const shade = (0.8 + 0.3 * Math.cos(a)) * (0.9 + r() * 0.2)
+            const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(1.95 * shade)
+            ;(near ? cards : farCards).push(new Matrix4().compose(pos, q, new Vector3(sz, sz, sz)))
+            ;(near ? cardCols : farCols).push(tint)
+          }
+        }
+        run = []
       }
+      for (let x = -halfWidth; x <= halfWidth; x += 3) {
+        const z = z0 + bend(x)
+        if (blocked(x, z)) {
+          flush()
+          continue
+        }
+        run.push(new Vector3(x, terrainHeight(x, z) + lift, z))
+      }
+      flush()
     }
 
     // The hero bush the harvest branch belongs to.
     const hx = BRANCH.x + 3.5
     const hz = BRANCH.z - 8.5
-    addBush(cards, cardCols, r, hx, terrainHeight(BRANCH.x, BRANCH.z) + 8.5, hz, 5.5, 8, detail === 'high' ? 85 : 45, 3.0, new Color('#5a9444').multiplyScalar(2))
-    return { cards, cardCols, farCards, farCols }
+    const hy = terrainHeight(BRANCH.x, BRANCH.z) + 8.5
+    addBush(cards, cardCols, r, hx, hy, hz, 5.5, 8, detail === 'high' ? 420 : 200, 2.4, new Color('#4f8a3e').multiplyScalar(2))
+    // Its body, so the bush reads as one plant rather than a cloud of loose sprigs.
+    const body = new SphereGeometry(1, 20, 14)
+    body.scale(5.5 * 0.62, 8 * 0.62, 5.5 * 0.62).translate(hx, hy, hz)
+    cores.push(body)
+    const core = mergeGeometries(cores)
+    cores.forEach((g) => g.dispose())
+    return { cards, cardCols, farCards, farCols, core }
   }, [detail])
 
   return (
     <group>
+      <mesh geometry={data.core} material={coreMaterial} receiveShadow />
       <Instances geometry={cardGeo} material={m.leafCard} mats={data.cards} cols={data.cardCols} />
       <Instances geometry={cardGeo} material={m.leafCardFar} mats={data.farCards} cols={data.farCols} />
     </group>
@@ -340,24 +444,28 @@ function Forest({ detail }: { detail: Detail }) {
     // Forest canopy across the valley and the far hills: clumps of sprig cards.
     const clumps = detail === 'high' ? 300 : 150
     for (let i = 0; i < clumps; i++) {
-      const z = -110 - r() * 280
+      const z = -190 - r() * 220
       const spread = 120 + Math.max(0, -z) * 1.1
       const x = (r() - 0.5) * spread * 2
+      // Forest keeps the crests and the unplanted folds; the planted slopes stay open.
+      if (plantedMask(x, z) > 0.5 && r() < 0.85) continue
       const y = terrainHeight(x, z)
       const sz = 9 + r() * 10
       const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2)
-      addBush(cards, cardCols, r, x, y + sz * 0.5, z, sz, sz * 0.75, detail === 'high' ? 8 : 6, sz * 1.35, tint)
+      addBush(cards, cardCols, r, x, y + sz * 0.5, z, sz, sz * 0.75, detail === 'high' ? 22 : 10, sz * 0.9, tint)
     }
 
     // A few tall silver oaks, as in the hills of Chikmagalur.
     const tree = (x: number, z: number, h: number) => {
       const y = terrainHeight(x, z)
       trunks.push(new Matrix4().compose(new Vector3(x, y - 1, z), new Quaternion(), new Vector3(0.6 + h / 140, h, 0.6 + h / 140)))
-      const crowns = 2 + Math.floor(r() * 2)
-      for (let k = 0; k < crowns; k++) {
-        const cs = (5 + r() * 4) * (h / 70)
-        const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2.2)
-        addBush(cards, cardCols, r, x + (r() - 0.5) * cs, y + h * (0.72 + k * 0.14), z + (r() - 0.5) * cs, cs, cs * 0.6, detail === 'high' ? 14 : 8, cs * 0.9, tint)
+      // Silver oak: a narrow, feathery column of foliage over the upper half of the trunk.
+      const tiers = 5
+      for (let k = 0; k < tiers; k++) {
+        const t = k / (tiers - 1)
+        const cs = (4.2 - t * 2.2) * (h / 70) * (0.9 + r() * 0.2)
+        const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2.1 + t * 0.3)
+        addBush(cards, cardCols, r, x + (r() - 0.5) * 0.6, y + h * (0.5 + t * 0.48), z + (r() - 0.5) * 0.6, cs, cs * 0.9, detail === 'high' ? 26 : 12, cs * 0.75, tint)
       }
     }
     const scattered = detail === 'high' ? 6 : 3
@@ -461,7 +569,7 @@ const mistFragment = /* glsl */ `
 function MistLayers({ detail }: { detail: Detail }) {
   const layers = useMemo(() => {
     const all = [
-      { z: -120, y: -16, w: 600, h: 40, o: 0.55 },
+      { z: -120, y: -16, w: 600, h: 40, o: 0.3 },
       { z: -230, y: 6, w: 900, h: 60, o: 0.6 },
       { z: -360, y: 40, w: 1400, h: 80, o: 0.55 },
       { z: -520, y: 80, w: 2000, h: 110, o: 0.5 },
@@ -495,63 +603,6 @@ function MistLayers({ detail }: { detail: Detail }) {
   )
 }
 
-function ForegroundFoliage({ detail }: { detail: Detail }) {
-  const m = getMaterials()
-  const cardGeo = useMemo(() => new PlaneGeometry(1, 1), [])
-  const below = useRef<Group>(null)
-  const above = useRef<Group>(null)
-
-  const data = useMemo(() => {
-    const r = rng(61)
-    const low: Matrix4[] = []
-    const lowCols: Color[] = []
-    const high: Matrix4[] = []
-    const highCols: Color[] = []
-    const count = detail === 'high' ? 34 : 18
-    const tint = new Color('#86b85c')
-    for (let i = 0; i < count; i++) {
-      const x = -26 + (i / count) * 52 + (r() - 0.5) * 3
-      const z = 34 + r() * 3.5
-      const y = 25 + r() * 1.8
-      const q = new Quaternion().setFromEuler(new Euler(-0.35 + (r() - 0.5) * 0.4, (r() - 0.5) * 0.9, (r() - 0.5) * 0.5))
-      const sz = 5.5 + r() * 3
-      low.push(new Matrix4().compose(new Vector3(x, y, z), q, new Vector3(sz, sz, sz)))
-      lowCols.push(tint.clone().multiplyScalar(1.1 + r() * 0.8))
-    }
-    const hang = detail === 'high' ? 7 : 4
-    for (let i = 0; i < hang; i++) {
-      const q = new Quaternion().setFromEuler(new Euler(0.2, (r() - 0.5) * 0.6, Math.PI + (r() - 0.5) * 0.9))
-      const sz = 4 + r() * 2
-      high.push(new Matrix4().compose(new Vector3(-13 + r() * 9, 35.4 + r() * 1.4, 38 + r() * 2), q, new Vector3(sz, sz, sz)))
-      highCols.push(tint.clone().multiplyScalar(0.7 + r() * 0.4))
-    }
-    return { low, lowCols, high, highCols }
-  }, [detail])
-
-  useFrame(() => {
-    const k = sub(sceneState.pos, 0.02, 0.4)
-    if (below.current) {
-      below.current.position.y = -k * k * 12
-      below.current.visible = k < 1
-    }
-    if (above.current) {
-      above.current.position.y = k * k * 10
-      above.current.visible = k < 1
-    }
-  })
-
-  return (
-    <>
-      <group ref={below}>
-        <Instances geometry={cardGeo} material={m.leafCard} mats={data.low} cols={data.lowCols} />
-      </group>
-      <group ref={above}>
-        <Instances geometry={cardGeo} material={m.leafCard} mats={data.high} cols={data.highCols} />
-      </group>
-    </>
-  )
-}
-
 /* ------------------------------------------------------------------- estate */
 
 export default function Estate({ detail }: { detail: Detail }) {
@@ -569,7 +620,6 @@ export default function Estate({ detail }: { detail: Detail }) {
       <Forest detail={detail} />
       <Waterfall />
       <MistLayers detail={detail} />
-      <ForegroundFoliage detail={detail} />
     </group>
   )
 }
