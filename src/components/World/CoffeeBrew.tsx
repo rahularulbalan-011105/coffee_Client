@@ -22,16 +22,18 @@ interface LiquidSurfaceProps {
   drive: (s: LiquidState) => void
   foamScale?: number
   segments?: number
+  /** 0 = opaque (milky coffee) … 1 = clear-bodied like black decoction or water. */
+  translucency?: number
 }
 
 /**
  * A glossy liquid disc with an optional froth layer. The disc is authored at radius 1
  * and scaled per frame, so a vessel of any profile can drive it.
  */
-export function LiquidSurface({ initialColor, drive, foamScale = 1, segments = 48 }: LiquidSurfaceProps) {
+export function LiquidSurface({ initialColor, drive, foamScale = 1, segments = 48, translucency = 0 }: LiquidSurfaceProps) {
   const group = useRef<Group>(null)
   const foamMesh = useRef<Mesh>(null)
-  const material = useMemo(() => createLiquidMaterial(initialColor), [initialColor])
+  const material = useMemo(() => createLiquidMaterial(initialColor, translucency), [initialColor, translucency])
   const foamMaterial = useMemo(() => {
     const m = getMaterials().foam.clone()
     m.opacity = 0

@@ -2,7 +2,7 @@ import { Color, DoubleSide, MeshDepthMaterial, MeshLambertMaterial, RGBADepthPac
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
 import { dabaraEngraving, filterLowerEngraving, filterUpperEngraving, tumblerEngraving } from './engraving'
 import { brassScan, tabletop, weatheredWood } from './realAssets'
-import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal } from './textures'
+import { make, brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal } from './textures'
 
 /**
  * Shared PBR materials. Created lazily (textures need `document`) and reused by
@@ -196,6 +196,7 @@ function build() {
     normalMap: tableScan.normalMap,
     roughnessMap: tableScan.roughnessMap,
     color: new Color('#8a6a55'),
+    normalScale: new Vector2(0.35, 0.35),
     roughness: 1,
     metalness: 0,
     envMapIntensity: 1.2,
@@ -291,11 +292,11 @@ export function getMaterials() {
 }
 
 /** Glossy liquid surface. Each liquid needs its own instance (its own colour). */
-export function createLiquidMaterial(color: string) {
+export function createLiquidMaterial(color: string, translucency = 0) {
   const normal = rippleNormal().clone()
   normal.needsUpdate = true
   normal.repeat.set(1.5, 1.5)
-  return new MeshPhysicalMaterial({
+  const m = new MeshPhysicalMaterial({
     color: new Color(color),
     // Dark and glossy: sharp key-light highlights, very little broad env reflection.
     roughness: 0.08,
@@ -304,6 +305,29 @@ export function createLiquidMaterial(color: string) {
     normalScale: new Vector2(0.2, 0.2),
     envMapIntensity: 0.3,
     specularIntensity: 0.55,
+  })
+  if (translucency > 0) {
+    // Real coffee is clear-bodied: shallow at the rim (the vessel glows through amber),
+    // deep and dark in the middle. Reflections stay at full strength.
+    m.transparent = true
+    m.alphaMap = liquidDepthMask(translucency)
+    m.depthWrite = false
+  }
+  return m
+}
+
+/** Opacity by depth: thin at the edge of the pool, denser towards the centre. */
+function liquidDepthMask(translucency: number) {
+  return make(`liquid-depth-${translucency}`, 256, (ctx, s) => {
+    const edge = Math.round(255 * (1 - 0.62 * translucency))
+    const mid = Math.round(255 * (1 - 0.32 * translucency))
+    const core = Math.round(255 * (1 - 0.14 * translucency))
+    const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2)
+    g.addColorStop(0, `rgb(${core},${core},${core})`)
+    g.addColorStop(0.6, `rgb(${mid},${mid},${mid})`)
+    g.addColorStop(1, `rgb(${edge},${edge},${edge})`)
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, s, s)
   })
 }
 

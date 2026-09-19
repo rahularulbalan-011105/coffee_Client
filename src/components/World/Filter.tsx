@@ -181,7 +181,7 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
           <mesh position-y={0.021} rotation-x={-Math.PI / 2} material={m.brassInner}>
             <circleGeometry args={[0.29, 32]} />
           </mesh>
-          <LiquidSurface initialColor="#1d0d05" drive={decoction} segments={detail === 'high' ? 48 : 24} />
+          <LiquidSurface initialColor="#1d0d05" drive={decoction} segments={detail === 'high' ? 48 : 24} translucency={0.5} />
         </group>
       </group>
 
@@ -194,7 +194,7 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
         <mesh ref={mound} position-y={0.012} material={m.powder} visible={false}>
           <sphereGeometry args={[1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
         </mesh>
-        <LiquidSurface initialColor="#2a160b" drive={water} segments={32} />
+        <LiquidSurface initialColor="#2a160b" drive={water} segments={32} translucency={0.8} />
         <group ref={press} visible={false}>
           <mesh geometry={pressGeo} material={m.satinPlain} castShadow />
           <mesh position-y={0.17} material={m.satinPlain} castShadow>

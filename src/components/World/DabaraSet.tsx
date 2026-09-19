@@ -29,7 +29,7 @@ export function DabaraVessel({ detail, liquid, body }: DabaraVesselProps) {
   return (
     <group>
       <mesh geometry={geo} material={m.dabaraBrass} customDepthMaterial={m.plainDepth} castShadow receiveShadow />
-      {liquid && <LiquidSurface initialColor="#3a1d0c" drive={liquid} segments={detail === 'high' ? 56 : 28} />}
+      {liquid && <LiquidSurface initialColor="#3a1d0c" drive={liquid} segments={detail === 'high' ? 56 : 28} translucency={0.3} />}
       {body && (
         <>
           {/* Inside faces seen through the cut read as the level coffee surface. */}

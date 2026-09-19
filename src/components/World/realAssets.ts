@@ -44,7 +44,7 @@ export const brassScan = () => surface('brass_pot_01', [3, 1], false)
 /** Sun-worn timber for the drying bed, rake and grinder base. */
 export const weatheredWood = () => surface('weathered_planks', [1, 1])
 /** Polished hardwood tabletop the brass set stands on. */
-export const tabletop = () => surface('wood_table_001', [1.6, 1.6])
+export const tabletop = () => surface('wood_table_001', [3.5, 3.5])
 
 export const unitNormal = (s = 1) => new Vector2(s, s)
 
