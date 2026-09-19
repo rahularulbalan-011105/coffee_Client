@@ -13,12 +13,14 @@ import {
   ShaderMaterial,
   SphereGeometry,
   TubeGeometry,
+  Vector2,
   Vector3,
   type BufferGeometry,
   type Group,
   type Material,
 } from 'three'
 import { sceneState } from '../../animation/journey'
+import { leafMatTextures } from './foliageTextures'
 import { applyFoliageNoise, getMaterials } from './materials'
 import { BRANCH, ESTATE_SUN } from './layout'
 import { rng } from './math'
@@ -324,9 +326,17 @@ function Terraces({ detail }: { detail: Detail }) {
   const m = getMaterials()
   const cardGeo = useMemo(() => new PlaneGeometry(1, 1), [])
   const coreMaterial = useMemo(() => {
-    const c = new MeshStandardMaterial({ color: new Color('#34592a'), roughness: 0.9, metalness: 0 })
-    applyFoliageNoise(c, 0.9)
-    return c
+    // The hedge body is clad in a seamless mat of painted coffee leaves.
+    const mat = leafMatTextures()
+    return new MeshStandardMaterial({
+      map: mat.map,
+      normalMap: mat.normal,
+      normalScale: new Vector2(1.1, 1.1),
+      color: new Color('#b8d3a2'),
+      roughness: 0.55,
+      metalness: 0,
+      envMapIntensity: 0.5,
+    })
   }, [])
 
   const data = useMemo(() => {
@@ -355,7 +365,27 @@ function Terraces({ detail }: { detail: Detail }) {
         if (run.length >= 4) {
           const curve = new CatmullRomCurve3(run)
           const len = curve.getLength()
-          cores.push(new TubeGeometry(curve, Math.max(4, Math.round(len / 2.5)), radius, 8, false))
+          const tube = new TubeGeometry(curve, Math.max(6, Math.round(len / 1.2)), radius, 12, false)
+          // Individual plants: each bush swells out of the row, with a lumpy, uneven crown.
+          const tp = tube.attributes.position
+          const tn = tube.attributes.normal
+          const uv = tube.attributes.uv
+          const seed = r() * 100
+          for (let k = 0; k < tp.count; k++) {
+            const along = uv.getX(k) * len
+            const around = uv.getY(k) * Math.PI * 2
+            const plant = Math.sin((along / 4.6) * Math.PI * 2 + seed)
+            const bulge =
+              0.16 * plant * plant +
+              0.07 * Math.sin(around * 3 + along * 0.9 + seed) +
+              0.05 * Math.sin(along * 2.3 + around * 5 + seed * 2) -
+              0.08
+            tp.setXYZ(k, tp.getX(k) + tn.getX(k) * radius * bulge, tp.getY(k) + tn.getY(k) * radius * bulge, tp.getZ(k) + tn.getZ(k) * radius * bulge)
+            // One leaf tile per ~4.5 units along the row and four around it.
+            uv.setXY(k, uv.getX(k) * (len / 4.5), uv.getY(k) * 4)
+          }
+          tube.computeVertexNormals()
+          cores.push(tube)
           // Leaf sprigs over the upper surface of the hedge.
           const mid = run[Math.floor(run.length / 2)]
           const near = Math.hypot(mid.x + 2, mid.z - 44) < 70
@@ -406,6 +436,8 @@ function Terraces({ detail }: { detail: Detail }) {
     // Its body, so the bush reads as one plant rather than a cloud of loose sprigs.
     const body = new SphereGeometry(1, 20, 14)
     body.scale(5.5 * 0.62, 8 * 0.62, 5.5 * 0.62).translate(hx, hy, hz)
+    const buv = body.attributes.uv
+    for (let k = 0; k < buv.count; k++) buv.setXY(k, buv.getX(k) * 6, buv.getY(k) * 4)
     cores.push(body)
     const core = mergeGeometries(cores)
     cores.forEach((g) => g.dispose())

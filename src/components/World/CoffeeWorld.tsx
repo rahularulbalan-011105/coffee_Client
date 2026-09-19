@@ -157,7 +157,7 @@ function EstateResolution({ max }: { max: number }) {
     const now = sceneState.pos < 2.3
     if (now === inEstate.current) return
     inEstate.current = now
-    setDpr(Math.min(window.devicePixelRatio, now ? Math.min(max, 1.25) : max))
+    setDpr(Math.min(window.devicePixelRatio, now ? Math.min(max, 1.5) : max))
   })
   return null
 }

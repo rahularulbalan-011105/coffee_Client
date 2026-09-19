@@ -231,6 +231,8 @@ function buildClusterTextures(key: string, seed: number, cherries: boolean) {
     for (const l of clusterLayout(size, seed, cherries).leaves) paintLeafNormal(ctx, l)
   })
   map.wrapS = map.wrapT = normal.wrapS = normal.wrapT = ClampToEdgeWrapping
+  // Seen at a slant from above: sharpen with full anisotropic filtering.
+  map.anisotropy = normal.anisotropy = 16
   return { map, normal }
 }
 
@@ -295,5 +297,60 @@ export function singleLeafTextures() {
     }
     ctx.putImageData(img, 0, 0)
   })
+  return { map, normal }
+}
+
+/**
+ * A seamless mat of overlapping coffee leaves (opaque, with shadowy gaps) for the body of
+ * the hedgerows: wherever the sprig cards do not cover, the hedge still shows real leaves.
+ */
+export function leafMatTextures() {
+  const size = 1024
+  const layout = () => {
+    const r = rng(83)
+    const leaves: LeafSpec[] = []
+    for (let i = 0; i < 300; i++) {
+      const [color, light] = LEAF_GREENS[Math.floor(r() * LEAF_GREENS.length)]
+      leaves.push({
+        x: r() * size,
+        y: r() * size,
+        len: size * (0.1 + r() * 0.06),
+        // Mostly pointing outwards and down, as leaves hang on a hedge.
+        angle: Math.PI * 0.5 + (r() - 0.5) * 2.4,
+        color,
+        light,
+        shade: Math.max(0, 0.7 - i / 300),
+      })
+    }
+    return { leaves, r }
+  }
+  // Draw each leaf, plus copies across the edges, so the tile wraps without seams.
+  const wrapped = (draw: (l: LeafSpec) => void, leaves: LeafSpec[]) => {
+    for (const l of leaves) {
+      for (const dx of [-size, 0, size]) {
+        for (const dy of [-size, 0, size]) {
+          if (l.x + dx < -l.len || l.x + dx > size + l.len || l.y + dy < -l.len || l.y + dy > size + l.len) continue
+          draw({ ...l, x: l.x + dx, y: l.y + dy })
+        }
+      }
+    }
+  }
+  const map = make(
+    'leaf-mat-map',
+    size,
+    (ctx) => {
+      ctx.fillStyle = '#1b3217'
+      ctx.fillRect(0, 0, size, size)
+      const { leaves, r } = layout()
+      wrapped((l) => paintLeaf(ctx, l, r), leaves)
+    },
+    true,
+  )
+  const normal = make('leaf-mat-normal', size, (ctx) => {
+    ctx.fillStyle = 'rgb(128,128,255)'
+    ctx.fillRect(0, 0, size, size)
+    wrapped((l) => paintLeafNormal(ctx, l), layout().leaves)
+  })
+  map.anisotropy = normal.anisotropy = 16
   return { map, normal }
 }
