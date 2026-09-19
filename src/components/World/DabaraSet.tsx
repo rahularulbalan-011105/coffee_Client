@@ -48,6 +48,11 @@ const REST = new Vector3().copy(STATIONS.dabara).add(LIP)
 const HIDDEN = new Vector3(REST.x - 0.3, REST.y, REST.z - 5)
 const POUR = new Vector3(STATIONS.tumbler.x - 0.07, STATIONS.tumbler.y + TUMBLER.height + 0.3, STATIONS.tumbler.z)
 /** Where the dabara settles for the hero shot: behind and left of the tumbler. */
+/** Where the dabara's base is right now (world). */
+export const dabaraFoot = new Vector3(0, 1e4, 0)
+/** Where the tumbler's base is right now (world). */
+export const tumblerFoot = new Vector3(0, 1e4, 0)
+
 export const DABARA_FINAL = new Vector3(STATIONS.tumbler.x - 0.62, STATIONS.tumbler.y, STATIONS.tumbler.z - 0.22)
 const FINAL = new Vector3().copy(DABARA_FINAL).add(LIP)
 const TILT_MAX = 1.42
@@ -127,6 +132,8 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
       dabaraPose(pv.position)
       pv.rotation.z = dabaraTilt(s.pour)
       pv.visible = s.transfer > 0.001 || s.pour > 0
+      // Its foot, for the contact shade on the table (lifted far away while hidden).
+      dabaraFoot.set(pv.position.x - LIP.x, pv.visible && root.current?.visible ? pv.position.y - LIP.y : 1e4, pv.position.z)
 
       // Coffee inside the tipped dabara: its surface stays level, reaches the mouth while
       // pouring, and drains as the tumbler fills.
@@ -158,6 +165,7 @@ export default function DabaraSet({ detail }: { detail: 'high' | 'low' }) {
       tb.visible = s.reveal > 0.001
       tb.position.set(STATIONS.tumbler.x, STATIONS.tumbler.y, lerp(STATIONS.tumbler.z - 4.5, STATIONS.tumbler.z, k))
       tb.rotation.y = (1 - k) * 0.6
+      tumblerFoot.set(tb.position.x, root.current?.visible && tb.visible ? tb.position.y : 1e4, tb.position.z)
     }
     if (rim.current) rim.current.intensity = 14 * smooth(sub(s.transfer, 0, 0.5)) + 10 * s.reveal
     if (sweep.current) {

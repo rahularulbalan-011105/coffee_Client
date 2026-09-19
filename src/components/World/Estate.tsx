@@ -242,12 +242,15 @@ function Instances({
   mats,
   cols,
   shadow,
+  receive,
 }: {
   geometry: BufferGeometry
   material: Material
   mats: Matrix4[]
   cols: Color[]
   shadow?: boolean
+  /** Receive shadows without casting (leaf cards: cheap, and they sit in the hedge's shade). */
+  receive?: boolean
 }) {
   const ref = useRef<InstancedMesh>(null)
   useLayoutEffect(() => {
@@ -262,7 +265,7 @@ function Instances({
     m.computeBoundingSphere()
   }, [mats, cols])
   if (mats.length === 0) return null
-  return <instancedMesh ref={ref} args={[geometry, material, mats.length]} castShadow={shadow} receiveShadow={shadow} />
+  return <instancedMesh ref={ref} args={[geometry, material, mats.length]} castShadow={shadow} receiveShadow={shadow || receive} />
 }
 
 const up = new Vector3(0, 1, 0)
@@ -470,9 +473,9 @@ function Terraces({ detail }: { detail: Detail }) {
 
   return (
     <group>
-      <mesh geometry={data.core} material={coreMaterial} receiveShadow />
-      <Instances geometry={cardGeo} material={m.leafCard} mats={data.cards} cols={data.cardCols} />
-      <Instances geometry={cardGeo} material={m.leafCardFar} mats={data.farCards} cols={data.farCols} />
+      <mesh geometry={data.core} material={coreMaterial} castShadow receiveShadow />
+      <Instances geometry={cardGeo} material={m.leafCard} mats={data.cards} cols={data.cardCols} receive />
+      <Instances geometry={cardGeo} material={m.leafCardFar} mats={data.farCards} cols={data.farCols} receive />
     </group>
   )
 }
@@ -553,9 +556,9 @@ function Forest({ detail }: { detail: Detail }) {
 
   return (
     <group>
-      <mesh geometry={data.body} material={leafMatMaterial()} />
+      <mesh geometry={data.body} material={leafMatMaterial()} castShadow receiveShadow />
       <Instances geometry={cardGeo} material={m.canopyCard} mats={data.cards} cols={data.cardCols} />
-      <Instances geometry={trunkGeo} material={m.bark} mats={data.trunks} cols={NO_COLORS} />
+      <Instances geometry={trunkGeo} material={m.bark} mats={data.trunks} cols={NO_COLORS} shadow />
     </group>
   )
 }

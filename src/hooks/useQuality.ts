@@ -26,7 +26,7 @@ export function detectTier(): Tier {
 
 export function settingsFor(tier: Tier): QualitySettings {
   return tier === 'high'
-    ? { tier, beans: 220, powder: 2600, dust: 240, shadowMap: 1024, dpr: [1, 1.75], postfx: true, dof: true }
+    ? { tier, beans: 220, powder: 2600, dust: 240, shadowMap: 2048, dpr: [1, 1.75], postfx: true, dof: true }
     : { tier, beans: 100, powder: 900, dust: 80, shadowMap: 512, dpr: [1, 1.25], postfx: false, dof: false }
 }
 

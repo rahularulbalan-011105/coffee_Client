@@ -31,7 +31,8 @@ export default function Counters() {
     c.envMapRotation = new Euler(0, 2.2, 0)
     c.alphaMap = fadeMask()
     c.transparent = true
-    c.depthWrite = false
+    // Written to depth so contact shading (ambient occlusion) can see the tabletop.
+    c.depthWrite = true
     return c
   }, [m, env])
 

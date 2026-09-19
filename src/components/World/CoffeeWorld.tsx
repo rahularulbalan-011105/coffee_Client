@@ -1,7 +1,7 @@
 import { Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei'
-import { PCFShadowMap, Vector3, type Camera, type Group, type Object3D, type Scene, type SpotLight, type WebGLRenderer } from 'three'
+import { PCFSoftShadowMap, Vector3, type Camera, type Group, type Object3D, type Scene, type SpotLight, type WebGLRenderer } from 'three'
 import { sceneState } from '../../animation/journey'
 import type { QualitySettings } from '../../hooks/useQuality'
 import Atmosphere from './Atmosphere'
@@ -9,7 +9,8 @@ import Backdrop from './Backdrop'
 import CameraRig, { cameraFocus } from './CameraRig'
 import CoffeeBrew from './CoffeeBrew'
 import Counters from './Counters'
-import DabaraSet from './DabaraSet'
+import DabaraSet, { dabaraFoot, tumblerFoot } from './DabaraSet'
+import ContactShadows from './ContactShadows'
 import DryingBed from './DryingBed'
 import { Dust } from './Effects3D'
 import Estate from './Estate'
@@ -146,6 +147,9 @@ function WarmUp({ onReady, world }: { onReady?: () => void; world: React.RefObje
   return null
 }
 
+const dabaraBase = (): [number, number, number] => [dabaraFoot.x, dabaraFoot.y, dabaraFoot.z]
+const tumblerBase = (): [number, number, number] => [tumblerFoot.x, tumblerFoot.y, tumblerFoot.z]
+
 /**
  * The estate is the most expensive stretch; render it at a slightly lower pixel ratio on
  * high-density screens so two-finger scrolling stays fluid, then restore full sharpness.
@@ -180,7 +184,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
       frameloop={active ? 'always' : 'never'}
       flat={postfx}
       dpr={dpr}
-      shadows={quality.tier === 'high' ? { type: PCFShadowMap } : false}
+      shadows={quality.tier === 'high' ? { type: PCFSoftShadowMap } : false}
       camera={{ fov: 38, near: 0.4, far: 3000, position: [-3, 27, 44] }}
       gl={{ antialias: !postfx, alpha: false, powerPreference: 'high-performance', stencil: false }}
       onCreated={({ gl }) => {
@@ -216,12 +220,13 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
           <RealReflections />
 
           <group ref={world}>
-          <Backdrop detail={detail} />
+          <Backdrop />
           <Estate detail={detail} />
           <Harvest detail={detail} />
           <DryingBed beans={quality.beans} detail={detail} />
           <Roaster beans={Math.round(quality.beans * 0.8)} detail={detail} />
           <Counters />
+          <ContactShadows dabaraBase={dabaraBase} tumblerBase={tumblerBase} />
           <Grinder detail={detail} />
           <PowderStream count={quality.powder} />
           <Filter detail={detail} />

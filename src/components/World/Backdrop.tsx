@@ -3,26 +3,18 @@ import { useFrame } from '@react-three/fiber'
 import {
   BackSide,
   Color,
-  Euler,
-  InstancedMesh,
-  Matrix4,
-  MeshStandardMaterial,
-  Quaternion,
   ShaderMaterial,
   Vector3,
   type Mesh,
 } from 'three'
 import { sceneState } from '../../animation/journey'
 import { cameraFocus } from './CameraRig'
-import { beanGeometry } from './geometry'
-import { PLANT_COLORS } from './materials'
 import { rng, smooth, sub } from './math'
 import { make } from './textures'
 
 /**
  * The atmosphere behind the processing stages (after the estate): a warm, candle-like glow
- * behind each subject, slow wisps of aroma drifting across it, golden bokeh, and a few
- * roasted beans rising gently in soft focus — calm, warmth, and a lift of energy.
+ * behind each subject, slow wisps of aroma drifting across it and golden bokeh.
  */
 
 const backdropVertex = /* glsl */ `
@@ -138,15 +130,9 @@ function glowAt(pos: number) {
 }
 
 const focusDir = new Vector3()
-const m4 = new Matrix4()
-const q = new Quaternion()
-const e = new Euler()
-const p = new Vector3()
-const s = new Vector3()
 
-export default function Backdrop({ detail }: { detail: 'high' | 'low' }) {
+export default function Backdrop() {
   const sphere = useRef<Mesh>(null)
-  const beansRef = useRef<InstancedMesh>(null)
 
   const material = useMemo(
     () =>
@@ -170,30 +156,6 @@ export default function Backdrop({ detail }: { detail: 'high' | 'low' }) {
     [],
   )
 
-  const beanMaterial = useMemo(
-    () => new MeshStandardMaterial({ color: PLANT_COLORS.roastedBean.clone().multiplyScalar(1.4), roughness: 0.45, metalness: 0 }),
-    [],
-  )
-  const beanGeo = useMemo(() => beanGeometry('tiny'), [])
-
-  const beans = useMemo(() => {
-    const r = rng(2024)
-    const n = detail === 'high' ? 42 : 18
-    return Array.from({ length: n }, () => ({
-      // Offsets in camera-aligned space: x right, y up, z depth behind the focus point.
-      // Right of centre and around the subject — never behind the copy on the left.
-      x: -0.8 + r() * 5.5,
-      y: r() * 6,
-      z: 2.2 + r() * 4.5,
-      speed: 0.05 + r() * 0.08,
-      spin: new Vector3((r() - 0.5) * 0.6, (r() - 0.5) * 0.6, (r() - 0.5) * 0.6),
-      phase: r() * 10,
-      size: 1.4 + r() * 1.2,
-    }))
-  }, [detail])
-
-  const right = useMemo(() => new Vector3(), [])
-  const fwd = useMemo(() => new Vector3(), [])
 
   useFrame(({ camera, clock, scene }) => {
     const pos = sceneState.pos
@@ -213,30 +175,6 @@ export default function Backdrop({ detail }: { detail: 'high' | 'low' }) {
       u.uGlow.value.copy(glowAt(pos))
     }
 
-    const bm = beansRef.current
-    if (!bm) return
-    bm.visible = k > 0.01
-    if (!bm.visible) return
-    // Camera-aligned frame, so the beans always sit behind the subject.
-    fwd.copy(cameraFocus).sub(camera.position).setY(0).normalize()
-    right.set(-fwd.z, 0, fwd.x)
-    for (let i = 0; i < beans.length; i++) {
-      const b = beans[i]
-      const y = ((b.y + time * b.speed) % 6) - 3
-      const sway = Math.sin(time * 0.3 + b.phase) * 0.15
-      p.copy(cameraFocus)
-        .addScaledVector(right, b.x + sway)
-        .addScaledVector(fwd, b.z)
-      p.y += y
-      e.set(b.spin.x * time + b.phase, b.spin.y * time, b.spin.z * time)
-      q.setFromEuler(e)
-      // Fade in and out at the top and bottom of the drift.
-      const edge = Math.min(1, (3 - Math.abs(y)) / 0.8)
-      s.setScalar(b.size * k * Math.max(0, edge))
-      m4.compose(p, q, s)
-      bm.setMatrixAt(i, m4)
-    }
-    bm.instanceMatrix.needsUpdate = true
   }, -1)
 
   return (
@@ -244,7 +182,6 @@ export default function Backdrop({ detail }: { detail: 'high' | 'low' }) {
       <mesh ref={sphere} material={material} renderOrder={-30} frustumCulled={false} visible={false}>
         <sphereGeometry args={[80, 48, 24]} />
       </mesh>
-      <instancedMesh ref={beansRef} args={[beanGeo, beanMaterial, beans.length]} frustumCulled={false} visible={false} />
     </>
   )
 }

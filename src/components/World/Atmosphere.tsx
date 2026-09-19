@@ -182,6 +182,7 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
   const scene = useThree((s) => s.scene)
   const key = useRef<SpotLight>(null)
   const sun = useRef<DirectionalLight>(null)
+  const shadowCentre = useMemo(() => new Vector3(), [])
   const hemi = useRef<HemisphereLight>(null)
   const sky = useRef<Mesh>(null)
   const veil = useRef<Mesh>(null)
@@ -248,11 +249,16 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
       hemi.current.intensity = m.hemi
     }
     if (sun.current) {
-      sun.current.intensity = m.sun
-      sun.current.color.copy(m.sunColor)
-      sun.current.position.copy(f).addScaledVector(m.sunDir, 60)
-      sunTarget.position.copy(f)
+      const l = sun.current
+      l.intensity = m.sun
+      l.color.copy(m.sunColor)
+      // Centre the shadow box on the ground in view (between the camera and its focus).
+      shadowCentre.copy(camera.position).lerp(f, 0.45)
+      l.position.copy(shadowCentre).addScaledVector(m.sunDir, 120)
+      sunTarget.position.copy(shadowCentre)
       sunTarget.updateMatrixWorld()
+      // Outdoors only: indoors the key light's shadows take over.
+      l.shadow.autoUpdate = m.sun > 0.05 && m.sky > 0.05
     }
     if (key.current) {
       key.current.intensity = m.key
@@ -300,7 +306,20 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
 
       <hemisphereLight ref={hemi} />
       <primitive object={sunTarget} />
-      <directionalLight ref={sun} target={sunTarget} />
+      <directionalLight
+        ref={sun}
+        target={sunTarget}
+        castShadow
+        shadow-mapSize={[shadowMap, shadowMap]}
+        shadow-bias={-0.0006}
+        shadow-normalBias={0.6}
+        shadow-camera-left={-75}
+        shadow-camera-right={75}
+        shadow-camera-top={75}
+        shadow-camera-bottom={-75}
+        shadow-camera-near={1}
+        shadow-camera-far={320}
+      />
       <primitive object={keyTarget} />
       <spotLight
         ref={key}
