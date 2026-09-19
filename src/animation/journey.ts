@@ -32,7 +32,7 @@ type Range = readonly [number, number]
 /** Scene channels: each animates 0 → 1 across its window (chapter units). */
 export const CHANNELS = {
   ripen: [0.85, 1.45],
-  cherryFall: [1.4, 2.3],
+  cherryFall: [1.4, 1.9],
   land: [1.95, 2.7],
   rake: [2.35, 3.05],
   toRoaster: [2.95, 3.55],
@@ -73,7 +73,9 @@ export const CAMERA_KEYS: CameraKey[] = [
   // Harvest: into the bush, face to face with the branch.
   { at: 1.05, pos: [1.2, 12.4, 18.5], target: [3.0, 9.6, 8.5], fov: 34 },
   { at: 1.5, pos: [1.0, 10.2, 13.8], target: [3.0, 9.0, 8.8], fov: 32 },
-  // Follow the falling cherries down through the mist.
+  // Down with the cherries into the picker's basket.
+  { at: 1.82, pos: [2.2, 9.1, 12.2], target: [3.3, 7.45, 9.6], fov: 30 },
+  // Then down through the mist.
   { at: 2.0, pos: [1.0, 1.5, 12.0], target: [1.8, -2.5, 6.0], fov: 34 },
   // Drying bed: macro over the green beans.
   { at: 2.5, pos: [0.1, -6.5, 8.0], target: [0.4, -8.85, 4.0], fov: 32 },

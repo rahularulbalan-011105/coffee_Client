@@ -63,6 +63,20 @@ in `public/draco/`; if the GLB fails to load, the same geometry is generated pro
 **To use artist-made models, export GLBs with the same node names** — no animation code changes.
 Materials are applied at runtime so brass, steel and liquids stay consistent.
 
+## Real assets (`public/real/`)
+
+Surfaces and props are real-world captures (CC0, [Poly Haven](https://polyhaven.com)):
+
+| Asset | Used for |
+| --- | --- |
+| `wooden_lounge` HDRI | reflections on brass, steel and wood (`RealReflections.tsx`); the estate keeps its own outdoor light |
+| `brass_pot_01` scan | roughness and lacquer normal of every brass piece (engraving stays procedural) |
+| `weathered_planks` | drying bed, rake, grinder base |
+| `wood_table_001` | the tabletops under the grinder, filter and serving set (`Counters.tsx`) |
+| `wicker_basket_01` model | the picker's basket the cherries drop into (`Harvest.tsx`) |
+
+Swap any of them by replacing the files in `public/real/` (see `realAssets.ts`).
+
 ## Performance
 
 - Instanced leaves, bushes, cherries and beans; canopy LOD for distant bushes; shader-driven

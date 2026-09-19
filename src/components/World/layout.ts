@@ -14,6 +14,9 @@ import { Vector3 } from 'three'
  *   y = -32.5 dabara + tumbler
  */
 export const BRANCH = new Vector3(3.0, 9.0, 9.0)
+/** The picker's wicker basket (real scan), just below the branch: the cherries drop into it. */
+export const BASKET = new Vector3(3.3, 7.35, 9.6)
+export const BASKET_SCALE = 3.2
 
 export const STATIONS = {
   bed: new Vector3(0.4, -9, 4),

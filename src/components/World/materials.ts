@@ -1,7 +1,8 @@
 import { Color, DoubleSide, MeshDepthMaterial, MeshLambertMaterial, RGBADepthPacking, MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type Material, type Texture } from 'three'
 import { canopyClusterTextures, coffeeClusterTextures, singleLeafTextures } from './foliageTextures'
 import { dabaraEngraving, filterLowerEngraving, filterUpperEngraving, tumblerEngraving } from './engraving'
-import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal, tableTexture } from './textures'
+import { brassScan, tabletop, weatheredWood } from './realAssets'
+import { brushedRoughness, dropletNormal, foamTexture, perforatedTexture, rippleNormal } from './textures'
 
 /**
  * Shared PBR materials. Created lazily (textures need `document`) and reused by
@@ -94,6 +95,9 @@ function build() {
   })
 
   // Serving set: soft satin gold with a hand-engraved band (as in traditional brassware).
+  // The surface itself is a scan of real hand-hammered brass: its roughness (polish wear,
+  // fingerprints) and, in the lacquer layer, its hammer marks and scratches.
+  const scan = brassScan()
   const satinBrass = (tex?: { map: Texture; bump: Texture }) =>
     new MeshPhysicalMaterial({
       color: new Color('#e2bd72'),
@@ -101,9 +105,12 @@ function build() {
       bumpMap: tex?.bump ?? null,
       bumpScale: 1.4,
       metalness: 1,
-      roughness: 0.36,
-      clearcoat: 0.25,
-      clearcoatRoughness: 0.3,
+      roughness: 0.62,
+      roughnessMap: scan.roughnessMap,
+      clearcoat: 0.3,
+      clearcoatRoughness: 0.22,
+      clearcoatNormalMap: scan.normalMap,
+      clearcoatNormalScale: new Vector2(0.6, 0.6),
       envMapIntensity: 1.7,
       side: DoubleSide,
     })
@@ -146,9 +153,14 @@ function build() {
     side: DoubleSide,
   })
 
+  // Real sun-worn planks (scan), toned towards a dark oiled teak.
+  const woodScan = weatheredWood()
   const wood = new MeshStandardMaterial({
-    color: new Color('#1f120b'),
-    roughness: 0.48,
+    map: woodScan.map,
+    normalMap: woodScan.normalMap,
+    roughnessMap: woodScan.roughnessMap,
+    color: new Color('#b08a6a'),
+    roughness: 1,
     metalness: 0,
   })
 
@@ -177,11 +189,16 @@ function build() {
     metalness: 0,
   })
 
+  // Polished hardwood tabletop (scan) under the grinder, filter and serving set.
+  const tableScan = tabletop()
   const table = new MeshStandardMaterial({
-    map: tableTexture(),
-    color: new Color('#b09a8a'),
-    roughness: 0.62,
-    metalness: 0.05,
+    map: tableScan.map,
+    normalMap: tableScan.normalMap,
+    roughnessMap: tableScan.roughnessMap,
+    color: new Color('#8a6a55'),
+    roughness: 1,
+    metalness: 0,
+    envMapIntensity: 1.2,
   })
 
   const foam = new MeshStandardMaterial({
@@ -199,11 +216,11 @@ function build() {
     map: leafTex.map,
     normalMap: leafTex.normal,
     normalScale: new Vector2(0.8, 0.8),
-    roughness: 0.45,
+    roughness: 0.6,
     metalness: 0,
-    // Rain-wet: a glossy coat broken up by droplets.
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.2,
+    // Rain-wet: a thin waxy coat broken up by droplets (real coffee leaves are satin, not foil).
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.3,
     clearcoatNormalMap: dropletNormal(),
     clearcoatNormalScale: new Vector2(0.25, 0.25),
     sheen: 0.3,
@@ -235,12 +252,13 @@ function build() {
   const leafCardFar = new MeshLambertMaterial({ map: coffeeTex.map, alphaTest: 0.5, side: DoubleSide })
   fadeGrazingCards(leafCardFar)
 
+  // Coffee cherries have a waxy skin: a soft sheen rather than a candy gloss.
   const cherry = new MeshPhysicalMaterial({
     color: new Color('#ffffff'),
-    roughness: 0.28,
+    roughness: 0.42,
     metalness: 0,
-    clearcoat: 1,
-    clearcoatRoughness: 0.12,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.28,
     envMapIntensity: 0.9,
   })
 

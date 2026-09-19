@@ -1,16 +1,29 @@
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useGLTF } from '@react-three/drei'
 import { CatmullRomCurve3, Color, InstancedMesh, Matrix4, Quaternion, TubeGeometry, Vector3, type Group, type PointLight } from 'three'
 import { sceneState } from '../../animation/journey'
 import BeanFlow, { type Waypoint } from './BeanFlow'
 import { useKit } from './models'
 import { getMaterials, PLANT_COLORS } from './materials'
-import { BRANCH, MIST_BAND_Y, STATIONS } from './layout'
+import { BASKET, BASKET_SCALE, BRANCH } from './layout'
+import { BASKET_GLTF } from './realAssets'
 import { clamp01, rng } from './math'
 
 const hash = (i: number) => {
   const x = Math.sin(i * 127.1 + 311.7) * 43758.5453
   return x - Math.floor(x)
+}
+
+/** Where a cherry settles in the basket's heap (i-th of n). */
+function heapSpot(r: () => number, lift = 0) {
+  const a = r() * Math.PI * 2
+  const d = Math.sqrt(r())
+  // Inner size of the scanned basket ≈ 0.36 × 0.27 (× scale), 0.11 deep.
+  const x = Math.cos(a) * d * 0.16 * BASKET_SCALE
+  const z = Math.sin(a) * d * 0.115 * BASKET_SCALE
+  const y = 0.05 * BASKET_SCALE + (1 - d * d) * 0.06 * BASKET_SCALE + r() * 0.04 + lift
+  return new Vector3(BASKET.x + x, BASKET.y + y, BASKET.z + z)
 }
 
 const ripeColor = new Color()
@@ -22,10 +35,49 @@ function cherryColor(i: number) {
   return ripeColor.copy(PLANT_COLORS.cherryTurning).lerp(deep, (k - 0.5) * 2)
 }
 
+const pileM = new Matrix4()
+const pileQ = new Quaternion()
+const pileS = new Vector3()
+
+/** The scanned wicker basket, already heaped with the morning's ripe cherries. */
+function Basket() {
+  const { scene } = useGLTF(BASKET_GLTF)
+  const cherryGeo = useKit('cherry')
+  const m = getMaterials()
+  const pile = useRef<InstancedMesh>(null)
+  const count = 150
+  useLayoutEffect(() => {
+    scene.traverse((o) => {
+      o.castShadow = true
+      o.receiveShadow = true
+    })
+    const mesh = pile.current
+    if (!mesh) return
+    const r = rng(808)
+    const c = new Color()
+    for (let i = 0; i < count; i++) {
+      pileQ.setFromAxisAngle(new Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize(), r() * 6.28)
+      pileS.setScalar(0.06 * (0.85 + r() * 0.3))
+      pileM.compose(heapSpot(r), pileQ, pileS)
+      mesh.setMatrixAt(i, pileM)
+      const deep = r() > 0.6 ? PLANT_COLORS.cherryDeep : PLANT_COLORS.cherryRipe
+      mesh.setColorAt(i, c.copy(deep).lerp(PLANT_COLORS.cherryTurning, r() * 0.15))
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+  }, [scene])
+  return (
+    <group>
+      <primitive object={scene} position={BASKET} scale={BASKET_SCALE} rotation-y={0.25} />
+      <instancedMesh ref={pile} args={[cherryGeo, m.cherry, count]} castShadow receiveShadow frustumCulled={false} />
+    </group>
+  )
+}
+
 /**
  * A single coffee branch, close enough to touch: opposite pairs of glossy leaves and
- * tight cherry clusters at the nodes. The cherries ripen, let go, and fall towards the
- * drying yard far below — the camera follows them down.
+ * tight cherry clusters at the nodes. The cherries ripen, let go, and drop into the picker's
+ * wicker basket below.
  */
 export default function Harvest({ detail }: { detail: 'high' | 'low' }) {
   const group = useRef<Group>(null)
@@ -117,8 +169,8 @@ export default function Harvest({ detail }: { detail: 'high' | 'low' }) {
         color: cherryColor,
       },
       {
-        // Dissolve into the mist band above the drying yard.
-        place: (_i, r) => new Vector3(STATIONS.bed.x + (r() - 0.5) * 3, MIST_BAND_Y - r() * 1.2, STATIONS.bed.z + (r() - 0.5) * 2.2),
+        // Into the picker's wicker basket, on top of the morning's harvest.
+        place: (_i, r) => heapSpot(r, 0.06),
         color: (i) => cherryColor(i),
       },
     ]
@@ -135,6 +187,7 @@ export default function Harvest({ detail }: { detail: 'high' | 'low' }) {
     <group ref={group}>
       <mesh geometry={tube} material={m.bark} castShadow receiveShadow />
       <instancedMesh ref={leafRef} args={[leafGeo, m.leaf, nodes.length * 2]} castShadow receiveShadow />
+      <Basket />
       <BeanFlow
         count={42}
         geometry={cherryGeo}
@@ -143,8 +196,7 @@ export default function Harvest({ detail }: { detail: 'high' | 'low' }) {
         scaleJitter={0.2}
         seed={31}
         waypoints={cherryWaypoints}
-        legs={[{ progress: () => sceneState.cherryFall, stagger: 0.55, arc: 0.4, ease: 'fall' }]}
-        vanish
+        legs={[{ progress: () => sceneState.cherryFall, stagger: 0.55, arc: 0.25, ease: 'fall' }]}
         active={() => sceneState.pos > 0.35 && sceneState.pos < 2.45}
       />
     </group>

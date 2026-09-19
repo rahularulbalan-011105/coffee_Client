@@ -8,6 +8,7 @@ import Atmosphere from './Atmosphere'
 import Backdrop from './Backdrop'
 import CameraRig, { cameraFocus } from './CameraRig'
 import CoffeeBrew from './CoffeeBrew'
+import Counters from './Counters'
 import DabaraSet from './DabaraSet'
 import DryingBed from './DryingBed'
 import { Dust } from './Effects3D'
@@ -17,6 +18,7 @@ import Grinder, { PowderStream } from './Grinder'
 import Harvest from './Harvest'
 import { KitProvider } from './models'
 import PostFX from './PostFX'
+import RealReflections from './RealReflections'
 import Roaster from './Roaster'
 
 interface CoffeeWorldProps {
@@ -211,6 +213,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
         <KitProvider detail={detail}>
           <CameraRig parallax={detail === 'high'} />
           <Atmosphere shadowMap={quality.shadowMap} />
+          <RealReflections />
 
           <group ref={world}>
           <Backdrop detail={detail} />
@@ -218,6 +221,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
           <Harvest detail={detail} />
           <DryingBed beans={quality.beans} detail={detail} />
           <Roaster beans={Math.round(quality.beans * 0.8)} detail={detail} />
+          <Counters />
           <Grinder detail={detail} />
           <PowderStream count={quality.powder} />
           <Filter detail={detail} />
