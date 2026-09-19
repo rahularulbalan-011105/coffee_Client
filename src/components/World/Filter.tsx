@@ -4,7 +4,7 @@ import { Vector3, type Group, type Mesh } from 'three'
 import { sceneState } from '../../animation/journey'
 import CoffeePour, { type StreamState } from './CoffeePour'
 import { LiquidSurface, type LiquidState } from './CoffeeBrew'
-import { Aroma, Drips, Steam } from './Effects3D'
+import { Drips, Steam } from './Effects3D'
 import { useKit } from './models'
 import { COFFEE_COLORS, getMaterials } from './materials'
 import { FILTER, STATIONS } from './layout'
@@ -123,7 +123,8 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
     st.y = filterReadout.decoctionLevel
     st.radius = 0.289
     st.color.copy(COFFEE_COLORS.decoction)
-    st.foam = 0.06 * sub(sceneState.extract, 0.5, 1)
+    // Fresh decoction: fine bubbles gather at the wall as it collects.
+    st.foam = 0.95 * sub(sceneState.extract, 0.15, 0.6)
     st.tilt = -tilt
   }
 
@@ -181,7 +182,7 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
           <mesh position-y={0.021} rotation-x={-Math.PI / 2} material={m.brassInner}>
             <circleGeometry args={[0.29, 32]} />
           </mesh>
-          <LiquidSurface initialColor="#1d0d05" drive={decoction} segments={detail === 'high' ? 48 : 24} translucency={0.5} />
+          <LiquidSurface initialColor="#1d0d05" drive={decoction} segments={detail === 'high' ? 48 : 24} translucency={0.5} rim />
         </group>
       </group>
 
@@ -232,13 +233,6 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
         </mesh>
       </group>
 
-      <Aroma
-        count={detail === 'high' ? 70 : 30}
-        position={[f.x, f.y + 0.45, f.z]}
-        height={1.1}
-        radius={0.2}
-        intensity={() => window01(sceneState.brew, 0.1, 0.75, 0.2)}
-      />
 
       <CoffeePour color="#c9d9e0" highlight="#ffffff" opacity={0.55} taper={0.7} drive={waterStream} segments={48} />
       <CoffeePour color="#1a0b04" drive={transferStream} taper={0.6} />
@@ -262,7 +256,8 @@ export default function Filter({ detail }: { detail: 'high' | 'low' }) {
         count={detail === 'high' ? 3 : 2}
         width={0.4}
         height={0.95}
-        intensity={() => window01(sceneState.water, 0.1, 1, 0.3) * 0.8 + window01(sceneState.brew, 0.05, 0.6, 0.2)}
+        // Hot decoction breathes a faint, slow steam.
+        intensity={() => window01(sceneState.water, 0.1, 1, 0.3) * 0.8 + window01(sceneState.brew, 0.05, 0.85, 0.2) * 1.2}
       />
     </group>
   )

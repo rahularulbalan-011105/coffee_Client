@@ -109,6 +109,61 @@ export function foamTexture() {
   )
 }
 
+/**
+ * The edge of a pool of fresh decoction: a meniscus catching the light where the coffee
+ * climbs the wall, and fine tan bubbles gathered against it (with a few drifting clusters).
+ */
+export function rimBubblesTexture() {
+  return make(
+    'rim-bubbles',
+    1024,
+    (ctx, s) => {
+      const r = rng(64)
+      const c = s / 2
+      ctx.clearRect(0, 0, s, s)
+      // Slightly darker band just inside the meniscus, then the bright meniscus line.
+      ctx.lineWidth = s * 0.02
+      ctx.strokeStyle = 'rgba(20,8,2,0.35)'
+      ctx.beginPath()
+      ctx.arc(c, c, c * 0.95, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.lineWidth = s * 0.008
+      ctx.strokeStyle = 'rgba(255,214,160,0.55)'
+      ctx.beginPath()
+      ctx.arc(c, c, c * 0.985, 0, Math.PI * 2)
+      ctx.stroke()
+      const bubble = (x: number, y: number, rad: number) => {
+        ctx.beginPath()
+        ctx.arc(x, y, rad, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(${120 + r() * 50},${70 + r() * 35},${34 + r() * 25},${0.55 + r() * 0.3})`
+        ctx.fill()
+        ctx.lineWidth = Math.max(0.6, rad * 0.25)
+        ctx.strokeStyle = 'rgba(40,18,6,0.55)'
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(x - rad * 0.35, y - rad * 0.35, rad * 0.3, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(255,240,220,0.75)'
+        ctx.fill()
+      }
+      // Dense against the wall, thinning inwards.
+      for (let i = 0; i < 1400; i++) {
+        const a = r() * Math.PI * 2
+        const d = c * (0.975 - Math.pow(r(), 2.2) * 0.2)
+        bubble(c + Math.cos(a) * d, c + Math.sin(a) * d, 1.2 + Math.pow(r(), 3) * 7)
+      }
+      // A few loose clusters drifting on the surface.
+      for (let k = 0; k < 7; k++) {
+        const a = r() * Math.PI * 2
+        const d = c * (0.2 + r() * 0.55)
+        const cx = c + Math.cos(a) * d
+        const cy = c + Math.sin(a) * d
+        for (let i = 0; i < 18; i++) bubble(cx + (r() - 0.5) * 34, cy + (r() - 0.5) * 34, 1 + Math.pow(r(), 3) * 5)
+      }
+    },
+    true,
+  )
+}
+
 /** Dark stone table top with faint mineral variation. */
 export function tableTexture() {
   return make(

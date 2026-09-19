@@ -1,9 +1,10 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Color, type Group, type Mesh, type PointLight } from 'three'
+import { Color, MeshStandardMaterial, type Group, type Mesh, type PointLight } from 'three'
 import { sceneState } from '../../animation/journey'
 import { createLiquidMaterial, getMaterials } from './materials'
 import { STATIONS } from './layout'
+import { rimBubblesTexture } from './textures'
 import { sub, window01 } from './math'
 
 export interface LiquidState {
@@ -24,21 +25,26 @@ interface LiquidSurfaceProps {
   segments?: number
   /** 0 = opaque (milky coffee) … 1 = clear-bodied like black decoction or water. */
   translucency?: number
+  /** Black decoction: fine bubbles and a meniscus at the wall instead of a milky froth. */
+  rim?: boolean
 }
 
 /**
  * A glossy liquid disc with an optional froth layer. The disc is authored at radius 1
  * and scaled per frame, so a vessel of any profile can drive it.
  */
-export function LiquidSurface({ initialColor, drive, foamScale = 1, segments = 48, translucency = 0 }: LiquidSurfaceProps) {
+export function LiquidSurface({ initialColor, drive, foamScale = 1, segments = 48, translucency = 0, rim = false }: LiquidSurfaceProps) {
   const group = useRef<Group>(null)
   const foamMesh = useRef<Mesh>(null)
   const material = useMemo(() => createLiquidMaterial(initialColor, translucency), [initialColor, translucency])
   const foamMaterial = useMemo(() => {
+    if (rim) {
+      return new MeshStandardMaterial({ map: rimBubblesTexture(), transparent: true, depthWrite: false, roughness: 0.3, metalness: 0, opacity: 0 })
+    }
     const m = getMaterials().foam.clone()
     m.opacity = 0
     return m
-  }, [])
+  }, [rim])
   const state = useMemo<LiquidState>(
     () => ({ y: 0, radius: 0.1, visible: false, color: new Color(initialColor), foam: 0, tilt: 0 }),
     [initialColor],

@@ -344,7 +344,8 @@ export const PLANT_COLORS = {
 }
 
 export const COFFEE_COLORS = {
-  decoction: new Color('#1d0d05'),
+  // Deep reddish brown, as strong South Indian decoction looks in the light.
+  decoction: new Color('#2b1107'),
   withMilk: new Color('#6b3c1c'),
   water: new Color('#a4b6c0'),
   milk: new Color('#efe3cf'),
