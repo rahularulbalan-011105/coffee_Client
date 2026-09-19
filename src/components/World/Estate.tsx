@@ -184,10 +184,10 @@ function Mountains() {
   const layers = useMemo(() => {
     const r = rng(4)
     const specs = [
-      { z: -390, base: 20, top: 120, haze: 0.3, body: '#3f6a3c', treeline: 1 },
-      { z: -560, base: 40, top: 190, haze: 0.5, body: '#557a53', treeline: 0.6 },
-      { z: -780, base: 60, top: 270, haze: 0.68, body: '#6f8a70', treeline: 0.3 },
-      { z: -1080, base: 80, top: 340, haze: 0.84, body: '#8f9d92', treeline: 0 },
+      { z: -390, base: 20, top: 120, haze: 0.18, body: '#3f6a3c', treeline: 1 },
+      { z: -560, base: 40, top: 190, haze: 0.34, body: '#557a53', treeline: 0.6 },
+      { z: -780, base: 60, top: 270, haze: 0.52, body: '#6f8a70', treeline: 0.3 },
+      { z: -1080, base: 80, top: 340, haze: 0.7, body: '#8f9d92', treeline: 0 },
     ]
     return specs.map((spec, li) => {
       const seg = 360
@@ -317,6 +317,42 @@ function addBush(
 
 /* ------------------------------------------------------------ terraced rows */
 
+let leafMat: MeshStandardMaterial | null = null
+/** Bodies of hedges, bushes and tree crowns: a seamless mat of painted, life-size leaves. */
+function leafMatMaterial() {
+  if (leafMat) return leafMat
+  const mat = leafMatTextures()
+  leafMat = new MeshStandardMaterial({
+    map: mat.map,
+    normalMap: mat.normal,
+    normalScale: new Vector2(1.1, 1.1),
+    color: new Color('#b8d3a2'),
+    roughness: 0.55,
+    metalness: 0,
+    envMapIntensity: 0.5,
+  })
+  return leafMat
+}
+
+/** A lumpy leafy volume (crown or clump body), UVs scaled to keep leaves life-size. */
+function leafyBlob(x: number, y: number, z: number, rx: number, ry: number, seed: number) {
+  const g = new SphereGeometry(1, 14, 10)
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) {
+    const vx = p.getX(i)
+    const vy = p.getY(i)
+    const vz = p.getZ(i)
+    const lump = 1 + 0.22 * Math.sin(vx * 4 + seed) * Math.sin(vy * 3 + seed * 1.7) + 0.14 * Math.sin(vz * 6 + vy * 3 + seed * 3) + 0.08 * Math.sin(vx * 9 + vz * 7 + seed)
+    p.setXYZ(i, x + vx * rx * lump, y + vy * ry * lump, z + vz * rx * lump)
+  }
+  g.computeVertexNormals()
+  const uv = g.attributes.uv
+  const around = Math.max(1, Math.round((Math.PI * 2 * rx) / 6))
+  const up = Math.max(1, Math.round((Math.PI * ry) / 6))
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * around, uv.getY(i) * up)
+  return g
+}
+
 /**
  * Coffee hedgerows along the slope. Each row is a solid rounded hedge (so there are no
  * see-through gaps) clad in leaf sprigs turned outwards from the row, with a slight swell
@@ -325,19 +361,7 @@ function addBush(
 function Terraces({ detail }: { detail: Detail }) {
   const m = getMaterials()
   const cardGeo = useMemo(() => new PlaneGeometry(1, 1), [])
-  const coreMaterial = useMemo(() => {
-    // The hedge body is clad in a seamless mat of painted coffee leaves.
-    const mat = leafMatTextures()
-    return new MeshStandardMaterial({
-      map: mat.map,
-      normalMap: mat.normal,
-      normalScale: new Vector2(1.1, 1.1),
-      color: new Color('#b8d3a2'),
-      roughness: 0.55,
-      metalness: 0,
-      envMapIntensity: 0.5,
-    })
-  }, [])
+  const coreMaterial = leafMatMaterial()
 
   const data = useMemo(() => {
     const r = rng(21)
@@ -381,15 +405,15 @@ function Terraces({ detail }: { detail: Detail }) {
               0.05 * Math.sin(along * 2.3 + around * 5 + seed * 2) -
               0.08
             tp.setXYZ(k, tp.getX(k) + tn.getX(k) * radius * bulge, tp.getY(k) + tn.getY(k) * radius * bulge, tp.getZ(k) + tn.getZ(k) * radius * bulge)
-            // One leaf tile per ~4.5 units along the row and four around it.
-            uv.setXY(k, uv.getX(k) * (len / 4.5), uv.getY(k) * 4)
+            // One leaf tile per ~6 units along the row and three around it (life-size leaves).
+            uv.setXY(k, uv.getX(k) * (len / 6), uv.getY(k) * 3)
           }
           tube.computeVertexNormals()
           cores.push(tube)
           // Leaf sprigs over the upper surface of the hedge.
           const mid = run[Math.floor(run.length / 2)]
           const near = Math.hypot(mid.x + 2, mid.z - 44) < 70
-          const density = near ? (detail === 'high' ? 7.5 : 3.8) : detail === 'high' ? 2.4 : 1.2
+          const density = near ? (detail === 'high' ? 5 : 2.6) : detail === 'high' ? 1.8 : 1
           const count = Math.round(len * density)
           for (let i = 0; i < count; i++) {
             const t = r()
@@ -408,7 +432,7 @@ function Terraces({ detail }: { detail: Detail }) {
             cardBasisY.crossVectors(cardBasisZ, cardBasisX)
             cardRot.makeBasis(cardBasisX, cardBasisY, cardBasisZ)
             const q = new Quaternion().setFromRotationMatrix(cardRot).premultiply(new Quaternion().setFromAxisAngle(cardBasisZ, (r() - 0.5) * 1.2))
-            const sz = (near ? 3.3 : 5) * (0.8 + r() * 0.4)
+            const sz = (near ? 4.2 : 5.6) * (0.8 + r() * 0.4)
             const shade = (0.8 + 0.3 * Math.cos(a)) * (0.9 + r() * 0.2)
             const tint = new Color(HEDGE_GREENS[Math.floor(r() * HEDGE_GREENS.length)]).multiplyScalar(1.95 * shade)
             ;(near ? cards : farCards).push(new Matrix4().compose(pos, q, new Vector3(sz, sz, sz)))
@@ -437,7 +461,7 @@ function Terraces({ detail }: { detail: Detail }) {
     const body = new SphereGeometry(1, 20, 14)
     body.scale(5.5 * 0.62, 8 * 0.62, 5.5 * 0.62).translate(hx, hy, hz)
     const buv = body.attributes.uv
-    for (let k = 0; k < buv.count; k++) buv.setXY(k, buv.getX(k) * 6, buv.getY(k) * 4)
+    for (let k = 0; k < buv.count; k++) buv.setXY(k, buv.getX(k) * 4, buv.getY(k) * 3)
     cores.push(body)
     const core = mergeGeometries(cores)
     cores.forEach((g) => g.dispose())
@@ -471,10 +495,11 @@ function Forest({ detail }: { detail: Detail }) {
     const cards: Matrix4[] = []
     const cardCols: Color[] = []
     const trunks: Matrix4[] = []
-    const darkGreens = ['#35603a', '#40703f', '#2f5733', '#4a7a4a']
+    const bodies: BufferGeometry[] = []
+    const greens = ['#3d6c3c', '#477a44', '#386437', '#528450']
 
-    // Forest canopy across the valley and the far hills: clumps of sprig cards.
-    const clumps = detail === 'high' ? 300 : 150
+    // Forest canopy across the far hills: full, rounded clumps (a leafy body + sprigs).
+    const clumps = detail === 'high' ? 240 : 120
     for (let i = 0; i < clumps; i++) {
       const z = -190 - r() * 220
       const spread = 120 + Math.max(0, -z) * 1.1
@@ -483,21 +508,30 @@ function Forest({ detail }: { detail: Detail }) {
       if (plantedMask(x, z) > 0.5 && r() < 0.85) continue
       const y = terrainHeight(x, z)
       const sz = 9 + r() * 10
-      const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2)
-      addBush(cards, cardCols, r, x, y + sz * 0.5, z, sz, sz * 0.75, detail === 'high' ? 22 : 10, sz * 0.9, tint)
+      bodies.push(leafyBlob(x, y + sz * 0.55, z, sz * 0.8, sz * 0.62, r() * 10))
+      const tint = new Color(greens[Math.floor(r() * 4)]).multiplyScalar(2)
+      addBush(cards, cardCols, r, x, y + sz * 0.55, z, sz * 1.1, sz * 0.82, detail === 'high' ? 30 : 12, sz * 1.0, tint)
     }
 
-    // A few tall silver oaks, as in the hills of Chikmagalur.
+    // Tall silver oaks shading the estate: straight trunks with a full, tall, narrow crown.
     const tree = (x: number, z: number, h: number) => {
       const y = terrainHeight(x, z)
-      trunks.push(new Matrix4().compose(new Vector3(x, y - 1, z), new Quaternion(), new Vector3(0.6 + h / 140, h, 0.6 + h / 140)))
-      // Silver oak: a narrow, feathery column of foliage over the upper half of the trunk.
-      const tiers = 5
-      for (let k = 0; k < tiers; k++) {
-        const t = k / (tiers - 1)
-        const cs = (4.2 - t * 2.2) * (h / 70) * (0.9 + r() * 0.2)
-        const tint = new Color(darkGreens[Math.floor(r() * 4)]).multiplyScalar(2.1 + t * 0.3)
-        addBush(cards, cardCols, r, x + (r() - 0.5) * 0.6, y + h * (0.5 + t * 0.48), z + (r() - 0.5) * 0.6, cs, cs * 0.9, detail === 'high' ? 26 : 12, cs * 0.75, tint)
+      trunks.push(new Matrix4().compose(new Vector3(x, y - 1, z), new Quaternion(), new Vector3(0.6 + h / 140, h * 0.75, 0.6 + h / 140)))
+      const w = (h / 70) * (5.5 + r() * 2)
+      const crownY = y + h * 0.68
+      const crownH = h * 0.26
+      // Several overlapping masses so the crown is irregular, never a capsule.
+      const masses = 4
+      for (let k = 0; k < masses; k++) {
+        const t = k / (masses - 1)
+        const mw = w * (1 - t * 0.45) * (0.8 + r() * 0.3)
+        const my = crownY + crownH * (t * 1.3 - 0.5)
+        const mx = x + (r() - 0.5) * w * 0.9
+        const mz = z + (r() - 0.5) * w * 0.9
+        bodies.push(leafyBlob(mx, my, mz, mw * 0.85, mw * 0.8, r() * 10))
+        const tint = new Color(greens[Math.floor(r() * 4)]).multiplyScalar(2.1 + t * 0.2)
+        // Sprigs breaking the outline, so the edge is made of leaves.
+        addBush(cards, cardCols, r, mx, my, mz, mw * 1.15, mw * 1.05, detail === 'high' ? 40 : 16, mw * 0.95, tint)
       }
     }
     const scattered = detail === 'high' ? 6 : 3
@@ -512,11 +546,14 @@ function Forest({ detail }: { detail: Detail }) {
       const x = (r() - 0.5) * (260 + Math.max(0, -z))
       tree(x, z, 55 + r() * 45)
     }
-    return { cards, cardCols, trunks }
+    const body = mergeGeometries(bodies)
+    bodies.forEach((g) => g.dispose())
+    return { cards, cardCols, trunks, body }
   }, [detail])
 
   return (
     <group>
+      <mesh geometry={data.body} material={leafMatMaterial()} />
       <Instances geometry={cardGeo} material={m.canopyCard} mats={data.cards} cols={data.cardCols} />
       <Instances geometry={trunkGeo} material={m.bark} mats={data.trunks} cols={NO_COLORS} />
     </group>
@@ -601,10 +638,10 @@ const mistFragment = /* glsl */ `
 function MistLayers({ detail }: { detail: Detail }) {
   const layers = useMemo(() => {
     const all = [
-      { z: -120, y: -16, w: 600, h: 40, o: 0.3 },
-      { z: -230, y: 6, w: 900, h: 60, o: 0.6 },
-      { z: -360, y: 40, w: 1400, h: 80, o: 0.55 },
-      { z: -520, y: 80, w: 2000, h: 110, o: 0.5 },
+      { z: -120, y: -16, w: 600, h: 40, o: 0.15 },
+      { z: -230, y: 6, w: 900, h: 60, o: 0.3 },
+      { z: -360, y: 40, w: 1400, h: 80, o: 0.35 },
+      { z: -520, y: 80, w: 2000, h: 110, o: 0.38 },
       { z: -720, y: 120, w: 2800, h: 140, o: 0.45 },
     ]
     const specs = detail === 'high' ? all : [all[0], all[2], all[3]]

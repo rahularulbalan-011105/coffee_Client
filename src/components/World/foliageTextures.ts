@@ -309,17 +309,18 @@ export function leafMatTextures() {
   const layout = () => {
     const r = rng(83)
     const leaves: LeafSpec[] = []
-    for (let i = 0; i < 300; i++) {
+    const n = 130
+    for (let i = 0; i < n; i++) {
       const [color, light] = LEAF_GREENS[Math.floor(r() * LEAF_GREENS.length)]
       leaves.push({
         x: r() * size,
         y: r() * size,
-        len: size * (0.1 + r() * 0.06),
+        len: size * (0.2 + r() * 0.08),
         // Mostly pointing outwards and down, as leaves hang on a hedge.
         angle: Math.PI * 0.5 + (r() - 0.5) * 2.4,
         color,
         light,
-        shade: Math.max(0, 0.7 - i / 300),
+        shade: Math.max(0, 0.7 - i / n),
       })
     }
     return { leaves, r }

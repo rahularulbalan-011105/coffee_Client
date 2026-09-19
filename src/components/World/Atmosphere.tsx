@@ -41,8 +41,8 @@ interface Mood {
 }
 
 const MOODS: Mood[] = [
-  { at: 0, bg: '#b4bab3', fog: '#b1b8ae', density: 0.0034, sky: 1, skyTop: '#7c858a', skyHorizon: '#c9cec7', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.3, sun: 2.3, sunColor: '#f4f2ea', sunDir: [0.25, 0.7, -1], key: 0, keyColor: '#ffe0b8', env: 0.35 },
-  { at: 1.5, bg: '#aeb5ad', fog: '#a9b1a6', density: 0.006, sky: 1, skyTop: '#7c858a', skyHorizon: '#c3c9c1', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.35, sun: 2.3, sunColor: '#f4f2ea', sunDir: [0.25, 0.8, -0.8], key: 0, keyColor: '#ffe0b8', env: 0.4 },
+  { at: 0, bg: '#b4bab3', fog: '#b1b8ae', density: 0.0022, sky: 1, skyTop: '#7c858a', skyHorizon: '#c9cec7', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.3, sun: 2.3, sunColor: '#f4f2ea', sunDir: [0.25, 0.7, -1], key: 0, keyColor: '#ffe0b8', env: 0.35 },
+  { at: 1.5, bg: '#aeb5ad', fog: '#a9b1a6', density: 0.0042, sky: 1, skyTop: '#7c858a', skyHorizon: '#c3c9c1', hemiSky: '#e4ebea', hemiGround: '#4a6a3e', hemi: 1.35, sun: 2.3, sunColor: '#f4f2ea', sunDir: [0.25, 0.8, -0.8], key: 0, keyColor: '#ffe0b8', env: 0.4 },
   { at: 2.1, bg: '#6f7563', fog: '#8f957f', density: 0.08, sky: 0.3, skyTop: '#55604f', skyHorizon: '#a9ad96', hemiSky: '#dfe0cb', hemiGround: '#2a2a1c', hemi: 0.8, sun: 2.2, sunColor: '#ffe3b5', sunDir: [-0.6, 0.8, -0.2], key: 10, keyColor: '#ffe0b8', env: 0.5 },
   { at: 2.55, bg: '#1d1a12', fog: '#221f16', density: 0.05, sky: 0, skyTop: '#1d1a12', skyHorizon: '#1d1a12', hemiSky: '#e0d7ba', hemiGround: '#1d170f', hemi: 0.55, sun: 1.8, sunColor: '#ffe7c4', sunDir: [-0.6, 1, 0.4], key: 34, keyColor: '#ffe0b8', env: 0.6 },
   { at: 3.5, bg: '#140e0a', fog: '#140e0a', density: 0.08, sky: 0, skyTop: '#140e0a', skyHorizon: '#140e0a', hemiSky: '#ffdcb5', hemiGround: '#140a05', hemi: 0.34, sun: 0.35, sunColor: '#ffd2a0', sunDir: [-0.6, 1, 0.4], key: 60, keyColor: '#ffc38a', env: 0.75 },
