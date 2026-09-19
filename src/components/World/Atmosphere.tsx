@@ -313,6 +313,7 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
         shadow-mapSize={[shadowMap, shadowMap]}
         shadow-bias={-0.0006}
         shadow-normalBias={0.6}
+        shadow-radius={6}
         shadow-camera-left={-75}
         shadow-camera-right={75}
         shadow-camera-top={75}
@@ -332,6 +333,7 @@ export default function Atmosphere({ shadowMap }: { shadowMap: number }) {
         shadow-mapSize={[shadowMap, shadowMap]}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
+        shadow-radius={5}
         shadow-camera-near={1}
         shadow-camera-far={10}
       />

@@ -1,7 +1,7 @@
 import { Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei'
-import { PCFSoftShadowMap, Vector3, type Camera, type Group, type Object3D, type Scene, type SpotLight, type WebGLRenderer } from 'three'
+import { PCFShadowMap, Vector3, type Camera, type Group, type Object3D, type Scene, type SpotLight, type WebGLRenderer } from 'three'
 import { sceneState } from '../../animation/journey'
 import type { QualitySettings } from '../../hooks/useQuality'
 import Atmosphere from './Atmosphere'
@@ -184,7 +184,7 @@ export default function CoffeeWorld({ quality, active, onReady, onGiveUp }: Coff
       frameloop={active ? 'always' : 'never'}
       flat={postfx}
       dpr={dpr}
-      shadows={quality.tier === 'high' ? { type: PCFSoftShadowMap } : false}
+      shadows={quality.tier === 'high' ? { type: PCFShadowMap } : false}
       camera={{ fov: 38, near: 0.4, far: 3000, position: [-3, 27, 44] }}
       gl={{ antialias: !postfx, alpha: false, powerPreference: 'high-performance', stencil: false }}
       onCreated={({ gl }) => {
