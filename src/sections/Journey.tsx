@@ -1,12 +1,10 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { CHAPTERS, CHAPTER_COUNT, createJourney, type ChapterId } from '../animation/journey'
-import { posterAt, tintAt } from '../animation/palette'
-import { useQuality } from '../hooks/useQuality'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { CHAPTERS, CHAPTER_COUNT, createJourney, sceneState, type ChapterId } from '../animation/journey'
+import { tintAt } from '../animation/palette'
+import Film, { type FilmHandle } from '../components/Film/Film'
 import ProgressRail, { RAIL_STARTS } from '../components/ui/ProgressRail'
 import Chapter, { type ChapterCopy } from './Chapter'
 import OrderSection from './OrderSection'
-
-const CoffeeWorld = lazy(() => import('../components/World/CoffeeWorld'))
 
 type StoryId = Exclude<ChapterId, 'order'>
 
@@ -159,49 +157,22 @@ const STORY: Record<StoryId, { copy: ChapterCopy; height: number; tone?: 'mist' 
   },
 }
 
-function hasWebGL() {
-  try {
-    const c = document.createElement('canvas')
-    return !!(c.getContext('webgl2') || c.getContext('webgl'))
-  } catch {
-    return false
-  }
-}
-
-/** Poster used when WebGL is unavailable or the device cannot keep up. */
-function JourneyPoster({ posterRef }: { posterRef: React.RefObject<HTMLDivElement | null> }) {
-  return (
-    <div
-      ref={posterRef}
-      className="absolute inset-0 transition-[background] duration-1000"
-      style={{ background: 'radial-gradient(60% 55% at 66% 45%, var(--poster-glow, #5c7560) 0%, var(--poster-base, #16261c) 70%)' }}
-    >
-      <svg viewBox="0 0 400 300" className="absolute bottom-0 right-0 h-[70%] w-[80%] opacity-25 md:w-[55%]" aria-hidden="true">
-        <path d="M0 220 Q60 160 120 190 T240 170 T400 150 V300 H0Z" fill="#0b0705" opacity="0.5" />
-        <path d="M0 250 Q80 210 160 230 T320 215 T400 205 V300 H0Z" fill="#0b0705" opacity="0.7" />
-      </svg>
-    </div>
-  )
-}
-
 export default function Journey({ onReady }: { onReady: () => void }) {
-  const quality = useQuality()
   const wrapper = useRef<HTMLDivElement>(null)
   const chapters = useRef<(HTMLElement | null)[]>([])
   const railRef = useRef<HTMLDivElement>(null)
   const railFill = useRef<HTMLDivElement>(null)
   const railDots = useRef<(HTMLLIElement | null)[]>([])
   const cue = useRef<HTMLDivElement>(null)
-  const poster = useRef<HTMLDivElement>(null)
+  const film = useRef<FilmHandle>(null)
   const promise = useRef<HTMLDivElement>(null)
-  const [webgl] = useState(hasWebGL)
-  const [gaveUp, setGaveUp] = useState(false)
   const [inView, setInView] = useState(true)
-  const showWorld = webgl && !gaveUp
 
   useEffect(() => {
-    if (!showWorld) onReady()
-  }, [showWorld, onReady])
+    // Never wait long on the first clip: its poster frame is already a finished picture.
+    const t = window.setTimeout(onReady, 2500)
+    return () => window.clearTimeout(t)
+  }, [onReady])
 
   useEffect(() => {
     const el = wrapper.current
@@ -232,11 +203,7 @@ export default function Journey({ onReady }: { onReady: () => void }) {
           el.style.setProperty('--tint', tint)
           lastTint = tint
         }
-        if (poster.current) {
-          const p = posterAt(pos)
-          poster.current.style.setProperty('--poster-glow', p.glow)
-          poster.current.style.setProperty('--poster-base', p.base)
-        }
+        film.current?.update(pos)
         if (cue.current) cue.current.style.opacity = String(Math.max(0, 1 - pos * 4))
         if (railRef.current) railRef.current.style.opacity = pos > 9.55 ? '0' : '1'
         if (promise.current) promise.current.style.opacity = pos > 2.4 && pos < 9.3 ? '1' : '0'
@@ -247,21 +214,18 @@ export default function Journey({ onReady }: { onReady: () => void }) {
 
   useEffect(() => {
     if (railRef.current) railRef.current.style.visibility = inView ? 'visible' : 'hidden'
+    // Past the journey: stop decoding video nobody can see.
+    if (!inView) wrapper.current?.querySelectorAll('video').forEach((v) => v.pause())
+    else film.current?.update(sceneState.pos)
   }, [inView])
 
   const story = CHAPTERS.filter((c) => c.id !== 'order') as unknown as { id: StoryId }[]
 
   return (
     <div ref={wrapper} id="journey" className="relative" style={{ ['--tint' as string]: '18 30 22' }}>
-      {/* Persistent world layer: stays with the viewport while the story scrolls over it. */}
+      {/* Persistent film layer: stays with the viewport while the story scrolls over it. */}
       <div className="sticky top-0 z-0 h-[100svh] w-full overflow-hidden">
-        {showWorld ? (
-          <Suspense fallback={null}>
-            <CoffeeWorld quality={quality} active={inView} onReady={onReady} onGiveUp={() => setGaveUp(true)} />
-          </Suspense>
-        ) : (
-          <JourneyPoster posterRef={poster} />
-        )}
+        <Film ref={film} onFirstFrame={onReady} />
         <div className="journey-vignette pointer-events-none absolute inset-0" />
         <div
           ref={promise}

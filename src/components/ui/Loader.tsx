@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrandMark } from './Brand'
 
-/** Brand curtain shown until the WebGL scene has drawn its first frames. */
+/** Brand curtain shown until the opening shot is ready. */
 export default function Loader({ ready }: { ready: boolean }) {
   const [gone, setGone] = useState(false)
   const [forced, setForced] = useState(false)
