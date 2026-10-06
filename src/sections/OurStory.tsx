@@ -69,8 +69,8 @@ export default function OurStory() {
               <em className="block text-bronze">of the Western Ghats.</em>
             </h2>
             <p data-reveal="2" className="mt-8 max-w-md text-lg font-light leading-relaxed text-ink/70">
-              <em>Manam</em> is the Tamil word for fragrance — the aroma that drifts from a kitchen before anyone says
-              good morning. Ours begins on a hillside in Chikmagalur.
+              <em>Thapra</em> begins where the fragrance does — on a hillside in Chikmagalur, in the aroma that drifts
+              from a kitchen before anyone says good morning.
             </p>
             <dl data-reveal="3" className="mt-10 grid max-w-md grid-cols-3 gap-4 border-y border-plantation/20 py-6">
               {FACTS.map((f) => (

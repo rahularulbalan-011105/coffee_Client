@@ -18,8 +18,8 @@ export function BrandMark({ className = 'h-8 w-8' }: BrandMarkProps) {
 export function Wordmark({ className = '' }: { className?: string }) {
   return (
     <span className={`inline-flex items-baseline gap-2 ${className}`}>
-      <span className="font-display text-[1.3rem] font-medium leading-none tracking-[0.28em] sm:text-[1.45rem] sm:tracking-[0.34em]">MANAM</span>
-      <span lang="ta" className="hidden text-[0.7rem] leading-none tracking-normal text-gold/80 sm:inline">மணம்</span>
+      <span className="font-display text-[1.3rem] font-medium leading-none tracking-[0.28em] sm:text-[1.45rem] sm:tracking-[0.34em]">THAPRA</span>
+      <span lang="ta" className="hidden text-[0.7rem] leading-none tracking-normal text-gold/80 sm:inline">தப்ரா</span>
     </span>
   )
 }

@@ -64,7 +64,7 @@ export default function Nav() {
         }`}
       >
         <nav className="mx-auto flex max-w-[92rem] items-center justify-between px-5 md:px-10" aria-label="Primary">
-          <a href="#top" onClick={go('#top')} className="flex items-center gap-3 text-cream" aria-label="Manam — back to the start">
+          <a href="#top" onClick={go('#top')} className="flex items-center gap-3 text-cream" aria-label="Thapra — back to the start">
             <BrandMark className="h-8 w-8 text-gold" />
             <Wordmark />
           </a>

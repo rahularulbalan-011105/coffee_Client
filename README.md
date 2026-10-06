@@ -1,4 +1,4 @@
-# Manam — From the estates of Chikmagalur to your tumbler
+# Thapra — From the estates of Chikmagalur to your tumbler
 
 A long, vertically scrolling coffee film. The page scrolls normally; behind it a persistent
 WebGL world descends from a misty Chikmagalur coffee estate through harvest, drying,

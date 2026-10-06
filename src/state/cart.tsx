@@ -18,7 +18,7 @@ interface CartValue {
 }
 
 const CartContext = createContext<CartValue | null>(null)
-const STORAGE_KEY = 'manam-cart'
+const STORAGE_KEY = 'thapra-cart'
 
 function load(): CartLine[] {
   try {

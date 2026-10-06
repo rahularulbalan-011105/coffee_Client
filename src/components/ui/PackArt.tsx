@@ -49,10 +49,10 @@ export function PackArt({ theme, name, sub, weight, variant = 'pouch', className
         <ellipse cx="120" cy="45" rx="82" ry="9" fill="#f5deaa" opacity="0.5" />
         <rect x="42" y="268" width="156" height="10" fill={`url(#tf${id})`} opacity="0.85" />
         <text x="120" y="118" textAnchor="middle" fill={theme.foil} fontFamily="Cormorant Garamond, serif" fontSize="22" letterSpacing="6">
-          MANAM
+          THAPRA
         </text>
         <text x="120" y="136" textAnchor="middle" fill={theme.foil} opacity="0.75" fontSize="10">
-          மணம்
+          தப்ரா
         </text>
         <line x1="84" y1="150" x2="156" y2="150" stroke={theme.foil} strokeOpacity="0.5" />
         {lines.map((l, i) => (
@@ -103,10 +103,10 @@ export function PackArt({ theme, name, sub, weight, variant = 'pouch', className
       {/* Label */}
       <rect x="68" y="92" width="104" height="164" rx="3" fill="none" stroke={theme.foil} strokeOpacity="0.55" />
       <text x="120" y="120" textAnchor="middle" fill={theme.foil} fontFamily="Cormorant Garamond, serif" fontSize="19" letterSpacing="5">
-        MANAM
+        THAPRA
       </text>
       <text x="120" y="136" textAnchor="middle" fill={theme.foil} opacity="0.75" fontSize="9">
-        மணம்
+        தப்ரா
       </text>
       {/* Dabara + tumbler line drawing */}
       <g stroke={theme.foil} strokeWidth="1.1" fill="none" strokeLinecap="round" opacity="0.9">

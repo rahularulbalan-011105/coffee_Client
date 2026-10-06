@@ -3,7 +3,7 @@ import { BrandMark, Wordmark } from '../components/ui/Brand'
 
 const COLUMNS = [
   { title: 'Shop', links: ['Coffee', 'Brass & filters', 'Gift sets', 'Subscriptions'] },
-  { title: 'Manam', links: ['Our story', 'Estates', 'Journal', 'Cafés'] },
+  { title: 'Thapra', links: ['Our story', 'Estates', 'Journal', 'Cafés'] },
   { title: 'Help', links: ['Brewing guide', 'Shipping', 'Contact', 'FAQ'] },
 ]
 
@@ -67,11 +67,11 @@ export default function Footer() {
         </div>
 
         <p aria-hidden="true" className="display mt-24 select-none text-center text-[clamp(4rem,19vw,17rem)] leading-[0.8] tracking-[0.08em] text-cream/[0.05]">
-          MANAM
+          THAPRA
         </p>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-cream/[0.07] pt-8 text-xs text-cream/40 md:flex-row">
-          <p>© {new Date().getFullYear()} Manam Coffee Co. Roasted in Bengaluru.</p>
+          <p>© {new Date().getFullYear()} Thapra Coffee Co. Roasted in Bengaluru.</p>
           <p className="eyebrow text-[0.55rem]">Bean · Roast · Grind · Filter · Brew · Serve</p>
         </div>
       </div>
