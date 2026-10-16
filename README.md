@@ -90,6 +90,50 @@ Swap any of them by replacing the files in `public/real/` (see `realAssets.ts`).
 
 ## Commerce
 
-`state/cart.tsx` is a small cart (persisted in `localStorage`); `CartDrawer` shows lines, totals
-and a demo "Place order". Product data and placeholder prices live in `data/products.ts` —
-wire these to a real checkout before launch. Copy and prices are illustrative.
+`state/cart.tsx` is a small cart (persisted in `localStorage`); `CartDrawer` shows lines and
+totals and leads to checkout at `#/checkout`. Product data and prices live in `data/products.ts`.
+
+### Checkout
+
+```
+#/checkout         sections/Checkout.tsx   delivery address + order summary + pay
+#/order/THP-XXXX   OrderPlaced             confirmation after a verified payment
+```
+
+Payment is Razorpay (UPI, cards, net banking, wallets); addresses and orders are stored in
+Supabase. A payment needs a server for the secret, so two Supabase Edge Functions do that work:
+
+| Function | Does |
+| --- | --- |
+| `create-order` | prices the basket from its own copy of the price list, saves the address and the order, opens a Razorpay order |
+| `verify-payment` | checks Razorpay's signature, then marks the order paid |
+
+The browser never sends an amount and never sees the Razorpay secret.
+
+**Prices live in two places** — `src/data/products.ts` and `supabase/functions/_shared/orders.ts`.
+Change both, or the server will refuse to charge the new price.
+
+### Switching it on
+
+1. **Supabase** — create a free project, open SQL → New query, paste `supabase/schema.sql`, Run.
+2. **Razorpay** — sign up (free, no monthly fee; they take a cut per payment), Settings → API Keys,
+   generate **test** keys first.
+3. **Deploy the functions** (needs the [Supabase CLI](https://supabase.com/docs/guides/cli)):
+   ```bash
+   supabase link --project-ref <your-project-ref>
+   supabase secrets set RAZORPAY_KEY_ID=rzp_test_xxx RAZORPAY_KEY_SECRET=xxx
+   supabase functions deploy create-order --no-verify-jwt
+   supabase functions deploy verify-payment --no-verify-jwt
+   ```
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided to functions automatically.
+4. **Front end** — copy `.env.example` to `.env.local` for local work, and add the same three
+   values as GitHub Actions secrets (Settings → Secrets and variables → Actions) so the deployed
+   site is built with them: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_RAZORPAY_KEY_ID`.
+5. **Test** with a [Razorpay test card](https://razorpay.com/docs/payments/payments/test-card-details/)
+   (e.g. 4111 1111 1111 1111, any future expiry, any CVV). Orders appear in Supabase → Table editor.
+6. **Go live** — finish Razorpay's KYC, swap the test keys for `rzp_live_…` in both Supabase
+   secrets and the GitHub secret, and redeploy.
+
+Until those keys exist the checkout page still works and says plainly that payment is not live
+yet; no order is taken. Orders you receive are in the `orders` table, with the delivery address
+in `addresses` — both are closed to the browser by row-level security.

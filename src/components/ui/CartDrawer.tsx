@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useCart } from '../../state/cart'
 import { inr, productById } from '../../data/products'
 import { setScrollLocked } from '../../animation/scrollController'
+import { navigate } from '../../state/route'
 import ProductArt from './ProductArt'
 import QuantitySelector from './QuantitySelector'
 import { Arrow } from './Brand'
@@ -9,15 +10,11 @@ import { Arrow } from './Brand'
 const FREE_SHIPPING = 999
 
 export default function CartDrawer() {
-  const { lines, subtotal, open, setOpen, setQty, clear } = useCart()
-  const [placed, setPlaced] = useState(false)
+  const { lines, subtotal, open, setOpen, setQty } = useCart()
 
   useEffect(() => {
     setScrollLocked(open)
-    if (!open) {
-      setPlaced(false)
-      return
-    }
+    if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -44,7 +41,7 @@ export default function CartDrawer() {
         <header className="flex items-center justify-between border-b border-cream/10 px-6 py-5">
           <div>
             <p className="eyebrow text-gold">Your cart</p>
-            <p className="display mt-1 text-3xl">{placed ? 'Order received' : 'Ready to brew'}</p>
+            <p className="display mt-1 text-3xl">Ready to brew</p>
           </div>
           <button
             type="button"
@@ -56,18 +53,8 @@ export default function CartDrawer() {
           </button>
         </header>
 
-        {placed ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
-            <p className="display text-5xl text-gold-soft">Nandri.</p>
-            <p className="mt-4 font-light text-cream/70">
-              This is a demo storefront, so nothing was charged. A real order would be roasted on Monday and at your
-              door by Thursday.
-            </p>
-            <button type="button" className="btn-ghost mt-8" onClick={() => setOpen(false)}>
-              Back to the story
-            </button>
-          </div>
-        ) : lines.length === 0 ? (
+        {lines.length === 0 ? (
+
           <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
             <p className="display text-4xl">Your tumbler is empty.</p>
             <p className="mt-3 font-light text-cream/60">Pick a coffee from the estate to begin.</p>
@@ -126,11 +113,11 @@ export default function CartDrawer() {
                 type="button"
                 className="btn-gold mt-2 w-full justify-center"
                 onClick={() => {
-                  setPlaced(true)
-                  clear()
+                  setOpen(false)
+                  navigate('checkout')
                 }}
               >
-                Place order <Arrow />
+                Checkout <Arrow />
               </button>
             </footer>
           </>

@@ -27,6 +27,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # Checkout keys. Add them under Settings → Secrets and variables → Actions.
+          # Missing ones are fine: checkout then says payment is not live yet.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_RAZORPAY_KEY_ID: ${{ secrets.VITE_RAZORPAY_KEY_ID }}
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
